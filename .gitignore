@@ -1,0 +1,5 @@
+venv/
+__pychache__/
+docs/
+dist/
+pyvesc.egg-info/

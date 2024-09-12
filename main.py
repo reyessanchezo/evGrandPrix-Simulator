@@ -1,22 +1,17 @@
 import pyvesc
+from pyvesc import VESC
+
+# Waiting for function that recognizes usb port
+# serial_port = "COM3"
+serial_port = ""
+print(dir(pyvesc))
 
 
-def simple_example():
-    # pyvesc.SetDutyCycle
-    my_msg = pyvesc.SetDutyCycle(0)
-
-    packet = pyvesc.encode(my_msg)
-
-    buffer = b"\x23\x82\x02" + packet + b"\x38\x23\x12\x01"
-
-    msg, consumed = pyvesc.decode(buffer)
-
-    buffer = buffer[consumed:]
-
-    assert my_msg.duty_cycle == msg.duty_cycle
-    print("Success!")
+def get_info():
+    with VESC(serial_port=serial_port) as motor:
+        print("Firmware: ", motor.get_firmware_version())
+        print("Measurements: ", motor.get_measurements())
 
 
 if __name__ == "__main__":
-    simple_example()
-    print(dir(pyvesc.SetDutyCycle))
+    get_info()
