@@ -15,7 +15,7 @@ def choose_port():
     if not detectedPorts:
         raise Exception("There were no ports detected.") 
     for i in range(len(detectedPorts)):
-        print(f"{i}: {detectedPorts[i][0], detectedPorts[i][1], detectedPorts[i][2]}")
+        print(f"{i}: {detectedPorts[i][0]}, {detectedPorts[i][1]}, {detectedPorts[i][2]}")
     serial_port = -1
     while (serial_port < 0 or serial_port > len(detectedPorts)):
         serial_port = int(input("Choose an index for the COM port: "))
@@ -27,7 +27,7 @@ if __name__ == '__main__':
         print("No ports detected.")
         exit()
     for i in range(len(detectedPorts)):
-        print(f"{i}: {detectedPorts[i][0], detectedPorts[i][1], detectedPorts[i][2]}")
+        print(f"{i}: {detectedPorts[i][0]}, {detectedPorts[i][1]}, {detectedPorts[i][2]}")
     serial_port = -1
     while (serial_port < 0 or serial_port > len(detectedPorts)):
         serial_port = int(input("Choose an index for the COM port: "))
