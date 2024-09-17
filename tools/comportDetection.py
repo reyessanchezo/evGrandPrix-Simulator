@@ -19,7 +19,7 @@ def choose_port():
     serial_port = -1
     while (serial_port < 0 or serial_port > len(detectedPorts)):
         serial_port = int(input("Choose an index for the COM port: "))
-    return f"{detectedPorts[i][0]}"
+    return f"{detectedPorts[serial_port][0]}"
 
 if __name__ == '__main__':
     print(f"{choose_port()}")
