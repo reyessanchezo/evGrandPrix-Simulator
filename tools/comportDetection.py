@@ -1,6 +1,6 @@
 import serial.tools.list_ports
 
-def serial_ports():
+def _serialPorts():
     pyserialPorts = serial.tools.list_ports.comports()
     result = []
     for port, desc, hwid in sorted(pyserialPorts):
@@ -11,7 +11,7 @@ def serial_ports():
 # https://stackoverflow.com/questions/12090503/listing-available-com-ports-with-python
 
 def choose_port():
-    detectedPorts = serial_ports()
+    detectedPorts = _serialPorts()
     if not detectedPorts:
         raise Exception("There were no ports detected.")
     for i in range(len(detectedPorts)):
@@ -22,4 +22,4 @@ def choose_port():
     return f"{detectedPorts[serial_port][0]}"
 
 if __name__ == '__main__':
-    print(f"{choose_port()}")
+    print(choose_port())
