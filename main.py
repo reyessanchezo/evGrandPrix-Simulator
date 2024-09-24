@@ -1,11 +1,9 @@
 import pyvesc
 from pyvesc import VESC
+from tools.comportDetection import choose_port
 
-# Waiting for function that recognizes usb port
-# serial_port = "COM3"
-serial_port = ""
-print(dir(pyvesc))
-
+#defines a serial port using our tool.
+serial_port = choose_port()
 
 def get_info():
     with VESC(serial_port=serial_port) as motor:
