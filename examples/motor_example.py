@@ -3,23 +3,27 @@ import time
 from pyvesc import VESC
 
 # serial port that VESC is connected to. Something like "COM3" for windows and as below for linux/mac
+
+"""
 serial_port = (
     "/dev/serial/by-id/usb-STMicroelectronics_ChibiOS_RT_Virtual_COM_Port_301-if00"
 )
+"""
 
+serial_port = "COM3"
 
 # a function to show how to use the class with a with-statement
+DUTY_CYCLE = 0.6
 def run_motor_using_with():
-    with VESC(serial_port=serial_port) as motor:
-        print("Firmware: ", motor.get_firmware_version())
-        motor.set_duty_cycle(0.02)
-
-        # run motor and print out rpm for ~2 seconds
-        for i in range(30):
+    with VESC(serial_port=serial_port, timeout=0.5) as motor:
+        #print("Firmware: ", motor.get_firmware_version())
+        motor.set_duty_cycle(DUTY_CYCLE)
+        #motor.set_rpm(1000)
+        for i in range(100):
             time.sleep(0.1)
-            print(motor.get_measurements().rpm)
-        motor.set_rpm(0)
-
+            motor.set_duty_cycle(DUTY_CYCLE)
+            #motor.set_rpm(1000)
+#square of rpm times some constant is the negative current to slow the motor
 
 # a function to show how to use the class as a static object.
 def run_motor_as_object():

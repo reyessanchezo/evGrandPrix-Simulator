@@ -1,56 +1,40 @@
-<!-- TODO: Add instructions to activate venv in Windows -->
-<!-- TODO: Update requirements.txt so pip install . sets up everything. -->
+# PyVESC [![Build Status](https://travis-ci.org/LiamBindle/PyVESC.svg?branch=master)](https://travis-ci.org/LiamBindle/PyVESC) [![Documentation Status](https://readthedocs.org/projects/pyvesc/badge/?version=latest)](http://pyvesc.readthedocs.io/en/latest/?badge=latest)
+This is a fork of the PyVESC library in order to run as-is on the current version of python.
 
-# evGrandPrix-Simulator
+PyVESC is aimed at being a easy to use and robust python implementation of the
+communication protocol used by the
+[VESC - Open Source ESC](http://vedder.se/2015/01/vesc-open-source-esc/) by
+Benjamin Vedder. Its a great project with a really great community and I'd urge
+anyone interested in motor controllers to take a look at it.
 
-This repository will contain documentation and files supporting the R. B. Annis evGrandPrix Simulator project. This project aims to build a dynamometer to simulate the stress of racing a gokart around a track and develop a simulator that can determine the optimal racing line given various kart parameters.
+That being said, if you're here you probably already know about it. This small
+project was written by Liam Bindle for the
+[University of Saskatchewan Space Design Team](https://usst.ca)
+as our primary language for non-embedded system is Python. You might wonder why
+you might need a library to handling packing and parsing VESC messages since
+Pythons standard
+[struct](https://docs.python.org/3.5/library/struct.html)
+module is great for almost exaclty this. PyVESC's usefulness comes from the fact
+that PyVESC is:
+- Well tested
+- Robust in handling corrupt packets in a buffer
+- Messages are easily extensible so that PyVESC can be used as a generic
+  message/codec protocol (ie. at the USST we use PyVESC for sending messages to
+  all of our embedded systems)
+- Implements a number of common-error catching exceptions to speed up your
+  development
 
-# Installation Instructions
+## Documentation
+For the latest version of PyVESC's documentation [Read The Docs](http://pyvesc.readthedocs.io/en/latest/)
 
-Due to some issues with the PyVESC package structure and potential configuration changes, we'll be using the files directly from the PyVESC repository. Fortunately, the current project already includes the PyVESC package, as it is lightweight.
+## Contributing
+Obviously this is just a quick and dirty project; however, if you have any ideas,
+critiques or changes just let me know or submit a pull request.
 
-Follow these steps to set up your environment:
+## License
+Just like VESC, PyVESC is distributed under a
+[Creative Commons ShareALike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/).
 
-1. Clone the GitHub repository:
+## Installation
 
-   ```bash
-   git clone https://github.com/reyessanchezo/evGrandPrix-Simulator.git
-   ```
-
-2. Create a virtual environment:
-
-   ```bash
-   python3 -m venv venv
-   ```
-
-3. Activate the virtual environment:
-
-   - On Linux/Mac:
-
-     ```bash
-     source venv/bin/activate
-     ```
-
-4. Navigate to the PyVESC directory:
-
-   ```bash
-   cd PyVESC
-   ```
-
-5. Install the PyVESC package in editable mode:
-
-   ```bash
-   pip install -e .
-   ```
-
-6. Return to the project root directory:
-
-   ```bash
-   cd ..
-   ```
-
-7. Install the required dependencies:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
+pip install -r requirements.txt
