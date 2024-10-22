@@ -8,13 +8,8 @@ serial_port = choose_port()
 
 def get_info():
     with VESC(serial_port=serial_port) as motor:
-        try:
-            print("Firmware: ", motor.get_firmware_version())
-            print("Measurements: ", motor.get_measurements())
-        except:
-            motor.flush()
-            motor.flush()
-            motor.close()
+        print("Firmware: ", motor.get_firmware_version())
+        print("Measurements: ", motor.get_measurements())
 
 
 if __name__ == "__main__":
