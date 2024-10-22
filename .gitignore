@@ -1,5 +1,5 @@
 venv/
-__pychache__/
+__pycache__/
 docs/
 dist/
 pyvesc.egg-info/

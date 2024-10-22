@@ -14,16 +14,18 @@ serial_port = "COM3"
 
 # a function to show how to use the class with a with-statement
 DUTY_CYCLE = 0.4
-def run_motor_using_with():
+
+
+def run():
     with VESC(serial_port=serial_port) as motor:
         try:
-            #print("Firmware: ", motor.get_firmware_version())
+            # print("Firmware: ", motor.get_firmware_version())
             motor.set_duty_cycle(DUTY_CYCLE)
-            #motor.set_rpm(1000)
+            # motor.set_rpm(1000)
             for i in range(100):
                 time.sleep(0.1)
                 motor.set_duty_cycle(DUTY_CYCLE)
-                #motor.set_rpm(1000)
+                # motor.set_rpm(1000)
                 print(motor.get_measurements().rpm)
         except:
             motor.flush()
@@ -55,6 +57,6 @@ def time_get_values():
 
 
 if __name__ == "__main__":
-    run_motor_using_with()
+    run()
     run_motor_as_object()
     time_get_values()

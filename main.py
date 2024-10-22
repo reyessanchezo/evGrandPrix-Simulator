@@ -1,26 +1,33 @@
-import pyvesc
 from pyvesc import VESC
+import time
 from tools.comportDetection import choose_port
-from examples.motor_example import run_motor_using_with
+from examples.motor_example import run
 
-#defines a serial port using our tool.
-serial_port = choose_port()
+DUTY_CYCLE = 0.6
 
-def get_info():
-    with VESC(serial_port=serial_port) as motor:
+
+def run(s):
+    with VESC(serial_port=s) as motor:
         try:
-            print("Firmware: ", motor.get_firmware_version())
-            print("Measurements: ", motor.get_measurements())
-        except:
-            motor.flush()
-            motor.flush()
-            motor.close()
+            # motor.set_duty_cycle(DUTY_CYCLE)
+            rpms = [2000, 5000]
+            for i in range(30):
+                for rpm in rpms:
+                    motor.serial_port.flush()
+                    motor.set_rpm(rpm)
+                    time.sleep(0.5)
+
+            print("It finshed")
+            motor.set_rpm(0)
+            motor.serial_port.flush()
+            motor.serial_port.close()
+            return
+        except KeyboardInterrupt:
+            motor.set_rpm(0)
+            motor.serial_port.flush()
+            motor.serial_port.close()
 
 
 if __name__ == "__main__":
-    print("0:get_info()\n1:set_duty_cycle(0.6) for 10s\n")
-    c = int(input())
-    if (c == 0):
-        get_info()
-    elif (c == 1):
-        run_motor_using_with()
+    serial_port = choose_port()
+    run(serial_port)
