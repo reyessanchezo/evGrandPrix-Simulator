@@ -1,7 +1,6 @@
 from pyvesc import VESC
 import time
-from tools.comportDetection import choose_port
-from examples.motor_example import run
+from tools.comport_detection import choose_port
 
 DUTY_CYCLE = 0.6
 
