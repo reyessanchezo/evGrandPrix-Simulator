@@ -10,11 +10,11 @@ pre_v3_33_fields = [
     ("temp_mos5", "h", 10),
     ("temp_mos6", "h", 10),
     ("temp_pcb", "h", 10),
-    ("current_motor", "i", 100),
-    ("current_in", "i", 100),
+    ("current_motor", "i", 100), # Motor Current
+    ("current_in", "i", 100),    # Battery Current -- Use This
     ("duty_now", "h", 1000),
     ("rpm", "i", 1),
-    ("v_in", "h", 10),
+    ("v_in", "h", 10), # Battery voltage -- EAT THIS
     ("amp_hours", "i", 10000),
     ("amp_hours_charged", "i", 10000),
     ("watt_hours", "i", 10000),
