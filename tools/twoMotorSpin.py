@@ -9,6 +9,7 @@ def rpm_spin(motor, rpm):
 
 def close_motor(motor):
     motor.set_rpm(rpm)
+    motor.stop_heartbeat()
     motor.serial_port.flush()
     motor.serial_port.close()
     
