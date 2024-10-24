@@ -7,8 +7,14 @@ def rpm_spin(motor, rpm):
     motor.serial_port.flush()
     motor.set_rpm(rpm)
 
+def close_motor(motor):
+    motor.set_rpm(rpm)
+    motor.serial_port.flush()
+    motor.serial_port.close()
+    
+
 def run_two_independent(acceleration_motor_serial, brake_motor_serial):
-    print(f"accelation and brake: {accMotor}, {brkMotor}")
+    print(f"accelation, brake: {accMotor}, {brkMotor}")
     
     return
     # we shouldn't need anything past this until we have two motors
@@ -36,20 +42,20 @@ def run_two_independent(acceleration_motor_serial, brake_motor_serial):
                         time.sleep(0.5)
 
                 print("It finshed")
-                accMotor.set_rpm(0)
-                accMotor.serial_port.flush()
-                accMotor.serial_port.close()
-                brkMotor.set_rpm(0)
-                brkMotor.serial_port.flush()
-                brkMotor.serial_port.close()
+                m1 = Process(target=close_motor, args=(accMotor,))
+                m2 = Process(target=close_motor, args=(brkMotor,))
+                m1.start()
+                m2.start()
+                m1.join()
+                m2.join()
                 return
             except KeyboardInterrupt:
-                accMotor.set_rpm(0)
-                accMotor.serial_port.flush()
-                accMotor.serial_port.close()
-                brkMotor.set_rpm(0)
-                brkMotor.serial_port.flush()
-                brkMotor.serial_port.close()
+                m1 = Process(target=close_motor, args=(accMotor,))
+                m2 = Process(target=close_motor, args=(brkMotor,))
+                m1.start()
+                m2.start()
+                m1.join()
+                m2.join()
                 return
 
 
