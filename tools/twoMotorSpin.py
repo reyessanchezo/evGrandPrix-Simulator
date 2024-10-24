@@ -19,7 +19,7 @@ def run_two_independent(acceleration_motor_serial, brake_motor_serial):
     return
     # we shouldn't need anything past this until we have two motors
     print("ANYTHING BEYOND THIS POINT ASSUMES THE TWO MOTORS ARE NOT CONNECTED\nCONFIRM THEY ARE NOT CONNECTED TO EACH OTHER")
-    cn = input("Type: CONFIRM to continue:")
+    cn = input("Type: CONFIRM to continue: ")
 
     if cn is not "CONFIRM":
         print("RETURNING")
