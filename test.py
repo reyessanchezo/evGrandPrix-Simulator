@@ -3,13 +3,23 @@ import time
 
 import matplotlib.pyplot as plt
 import numpy as np
-from pyvesc import VESC, GetRotorPosition
+import pandas as pd
+from pyvesc import VESC, GetValues, GetVersion
 
-from tools.comport_detection import choose_port
+from tools import choose_port
 
 global motor1, motor2
 
 MAX_RPM = 10000
+motor_measurements = []
+lock = threading.Lock()
+
+
+# TODO: Need to simulate coasting the motor (Descending function).
+# TODO: Figure out how often to take measurements.
+# FIX: The program does not print rpm values every cycle. Check output.
+#      GetMeasurements() is returning the wrong number of bytes and therefore measurements is of type GetRopotPosition, which does not have rpm as a value.
+
 
 # 40% for 10 seconds
 # 80% for 10 seconds
@@ -17,92 +27,110 @@ MAX_RPM = 10000
 # When it reaches 40%, keep it at 40%
 # Coast down to 0%
 # When it reaches 0%, stop the motor
+def tech_demo_data() -> list[float]:
+    # 40% for 10 seconds, and 80% for 10 seconds
+    rpm = [MAX_RPM* 0.4] * 100
+    rpm.extend([MAX_RPM* 0.8] * 100)
+    # duration = [5.0, 5.0]
+
+    # 80% to 40% in 1/x descending steps
+    a = np.linspace(0.8, 0.4, 50)
+
+    # 40% to 0% in 1/x descending steps
+    for i in range(len(a)):
+        a[i] = a[i] / (i + 2) + 0.4
+
+    a = a * MAX_RPM
+
+    rpm.extend(a.tolist())
+    # b = [0.1] * 50
+    # duration.extend(b)
+
+    # 40% for 10 seconds
+    rpm.extend([MAX_RPM* 0.4] * 100)
+    # duration.append(5)
+
+    return rpm
+
+def close_motor(motor) -> None:
+    motor.set_current(0)
+    motor.serial_port.flush()
+    motor.serial_port.close()
 
 
-# TODO: Need to simulate coasting the motor.
+def read_measurements(motor) -> None:
+    while True:
+        with lock:
+            if motor.serial_port.in_waiting > 0:
+                measurements = motor.get_measurements()
+
+                if isinstance(measurements, GetValues):
+                    record = {}
+                    for field in measurements.fields:
+                        record[field[0]] = getattr(measurements, field[0])
+
+                    motor_measurements.append(record)
+
+        time.sleep(0.1)
 
 
-final = [[], []]
 
-# 40% for 10 seconds and 80% for 10 seconds
-r1 = [-np.multiply(MAX_RPM, 0.4), np.multiply(MAX_RPM, 0.8)]
-duration = [5.0, 5.0]
-r2 = r1[::-1]
-
-# 80% to 40% in logarithm transf
-a = np.linspace(0.8, 0.4, 50)
-
-for i in range(len(a)):
-    a[i] = a[i] / (i + 2) + 0.4
-
-a = a * MAX_RPM
-
-r1.extend(a.tolist())
-b = [0.1] * 50
-duration.extend(b)
-
-# 40% for 10 seconds
-r1.append(np.multiply(MAX_RPM, 0.1))
-duration.append(5)
-rpms = [r1, r2]
+def plot_rpm(data) -> None:
+    rpm = [x["rpm"] for x in data]
+    plt.figure()
+    plt.plot(rpm)
+    plt.title("RPM vs Time")
+    plt.xlabel("Time (.1 s)")
+    plt.ylabel("RPM")
+    plt.show()
 
 
-# TODO: Make the motor run at different rpms.
-# TODO: Figure out how often to take measurements.
-# FIX: This function is not called at the end of the program.
 
-
-# def end():
-#     motor1.join()
-#     motor2.join()
-#     m1_n = len(final[0])
-#     m2_n = len(final[2])
-#     n = max(m1_n, m2_n)
-#     print("Motor 1 measurements:" + str(final[0][:n]))
-#     print("Motor 2 measurements:" + str(final[1][:n]))
-
-
-# FIX: The program does not print rpm values every cycle. Check output.
-#      GetMeasurements() is returning the wrong number of bytes and therefore measurements is of type GetRopotPosition, which does not have rpm as a value.
-rget = []
-
-
-def run(serial_port, n):
+def run(serial_port, rpm) -> None:
     with VESC(serial_port=serial_port) as motor:
         try:
-            for n, rpm in enumerate(r1):
-                rpm = int(rpm)
-                motor.set_rpm(rpm)
+            # Get firmware version and print it
+            version = motor.get_firmware_version()
+            if isinstance(version, GetVersion):
+                print("Version: ", version)
+            
+            thread = threading.Thread(target=read_measurements, args=(motor,))
+            thread.daemon = True
+            thread.start()
+            for rpm in rpm:
+                rpm = round(rpm)
+                with lock:
+                    motor.set_rpm(rpm)
 
-                time.sleep(duration[n])
+                time.sleep(0.1)
 
-                measurements = motor.get_measurements()
-                if measurements is not None:
-                    if not isinstance(measurements, GetRotorPosition):
-                        rget.append(measurements.rpm)
-                        print(measurements.rpm)
-
-            # plt.plot(duration, r1)
         except KeyboardInterrupt:
-            # end() # FIX: This function is not called at the end of the program.
-            motor.set_current(0)
-            motor.serial_port.flush()
-            motor.serial_port.close()
+            print("Exiting...")
+        finally:
+            with lock:
+                close_motor(motor)
 
 
 if __name__ == "__main__":
-    # print(r1, len(r1))
-    # print(duration, len(duration))
-    # plt.plot(r1)
-    # plt.show()
+    # Choose the serial ports
     s1 = choose_port()
-    s2 = choose_port()
-    motor1 = threading.Thread(target=run, args=(s1, 1))
-    motor2 = threading.Thread(target=run, args=(s2, 2))
+    # s2 = choose_port()
+
+    # Get tech demo data (rpm and time per rpm)
+    rpm = tech_demo_data()
+    
+    # Start thread
+    motor1 = threading.Thread(target=run, args=(s1, 1, rpm))
+    # motor2 = threading.Thread(target=run, args=(s2, 2, rpm))
     motor1.start()
-    motor2.start()
+    # motor2.start()
     motor1.join()
-    motor2.join()
-    print(len(rget))
-    plt.plot(rget)
-    plt.show()
+    # motor2.join()
+
+    # Plot the rpm of the results
+    plot_rpm(motor_measurements)
+
+    # Create dataframe and save results as csv file
+    final_data = pd.DataFrame(motor_measurements)
+    final_data.to_csv("motor_measurements.csv")
+
