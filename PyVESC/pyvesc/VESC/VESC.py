@@ -125,6 +125,12 @@ class VESC(object):
         """
         self.write(encode(SetCurrent(new_current)))
 
+    def set_ib_current(self, new_current):
+        """
+        :param new_current: new current in milli-amps for the motor
+        """
+        self.write(encode(SetCurrentBrake(new_current)))
+
     def set_duty_cycle(self, new_duty_cycle):
         """
         :param new_duty_cycle: Value of duty cycle to be set (range [-1e5, 1e5]).
