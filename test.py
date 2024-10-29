@@ -121,16 +121,10 @@ def run_motor(serial_port, rpm) -> None:
                 time.sleep(10)
 
             print("Done")
-            rpm = [x["rpm"] for x in motor_measurements]
-            rpm = [x / 3 for x in rpm]
-            f, ax = plt.subplots(1, 2)
-            ax[0].plot(rpm)
-            ax[1].plot(dyno_measurements)
-            plt.show()
+
             with lock1:
                 finished = True
             return
-
         except KeyboardInterrupt:
             print("Exiting...")
         finally:
@@ -162,6 +156,7 @@ def test_dyno(dyno_port) -> None:
                     dyno_measurements.append(milliamps)
 
                     print("RPM:", measurements.rpm, "| Watts", bp)
+                time.sleep(0.01)
 
         except KeyboardInterrupt:
             print("Exiting...")
@@ -190,6 +185,13 @@ if __name__ == "__main__":
     motor2.start()
     motor1.join()
     motor2.join()
+
+    rpm = [x["rpm"] for x in motor_measurements]
+    rpm = [x / 3 for x in rpm]
+    f, ax = plt.subplots(1, 2)
+    ax[0].plot(rpm)
+    ax[1].plot(dyno_measurements)
+    plt.show()
 
     # Plot the rpm of the results
     # plot_rpm(motor_measurements)
