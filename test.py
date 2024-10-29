@@ -12,6 +12,10 @@ MAX_RPM = 4400 * 3
 battery_voltage = 0
 motor_measurements = []
 dyno_measurements = []
+last_rpm = 0
+idx = 0
+speeds = [0.4 * MAX_RPM, 0.8 * MAX_RPM, 0.5 * MAX_RPM, 0]
+reach = False
 lock1 = threading.Lock()
 lock2 = threading.Lock()
 finished = False
@@ -51,15 +55,18 @@ def close_motor(motor) -> None:
 
 def read_measurements(motor) -> None:
     global finished
+    global last_rpm
     while not finished:
         with lock1:
             # if motor.serial_port.in_waiting > 0:
             measurements = motor.get_measurements()
 
             if isinstance(measurements, GetValues):
+                last_rpm = measurements.rpm
                 record = {}
                 for field in measurements.fields:
                     record[field[0]] = getattr(measurements, field[0])
+                print("RPM:", last_rpm)
 
                 motor_measurements.append(record)
 
@@ -79,6 +86,12 @@ def plot_rpm(data) -> None:
 
 def run_motor(serial_port, rpm) -> None:
     global finished
+    global last_rpm
+    global speeds
+    global reach
+    global idx
+    global motor_measurements
+
     with VESC(serial_port=serial_port) as motor:
         try:
             # Get firmware version and print it
@@ -89,13 +102,31 @@ def run_motor(serial_port, rpm) -> None:
             thread = threading.Thread(target=read_measurements, args=(motor,))
             thread.daemon = True
             thread.start()
-            for rpm in rpm:
-                rpm = round(rpm)
+
+            # for rpm in rpm:
+            #     rpm = round(rpm)
+            #     with lock1:
+            #         motor.set_rpm(rpm)
+
+            #     time.sleep(0.1)
+            for s in speeds:
+                s = round(s)
+                start = time.time()
                 with lock1:
-                    motor.set_rpm(rpm)
+                    motor.set_rpm(s)
+                while s < last_rpm:
+                    time.sleep(0.1)
+                end = time.time()
+                print("\n>>>>>> Time to reach speed:", end - start)
+                time.sleep(10)
 
-                time.sleep(0.1)
-
+            print("Done")
+            rpm = [x["rpm"] for x in motor_measurements]
+            rpm = [x / 3 for x in rpm]
+            f, ax = plt.subplots(1, 2)
+            ax[0].plot(rpm)
+            ax[1].plot(dyno_measurements)
+            plt.show()
             with lock1:
                 finished = True
             return
@@ -107,45 +138,24 @@ def run_motor(serial_port, rpm) -> None:
                 close_motor(motor)
 
 
-# def test_ib_current() -> None:
-#     while not finished:
-#         with lock2:
-#             if break_power != 0:
-#                 mili_amps = break_power * 1000 / battery_voltage
-
-#                 print("RPM:", motor_rpm, "Watts:", break_power, "Milliamps:", mili_amps)
-#         time.sleep(0.1)
-
-
-# def run_dyno(serial_port) -> None:
-#     global mili_amps
-#     global finished
-#     with VESC(serial_port=serial_port) as motor:
-#         try:
-#             while not finished:
-#                 with lock2:
-#                     mili_amps = break_power * 1000 / battery_voltage
-
-#                     motor.set_ib_current(mili_amps)
-#                     print("RPM:", measurements.rpm, "Braking power (mamps):", milliamps)
-#                 time.sleep(1)
-#         except KeyboardInterrupt:
-#             print("Exiting...")
-#         finally:
-#             with lock2:
-#                 close_motor(motor)
-
-
 def test_dyno(dyno_port) -> None:
     global finished
     global dyno_measurements
+    global speeds
+    global reach
+    global idx
 
     with VESC(serial_port=dyno_port) as dyno:
+        print("Dyno connected")
         try:
             while not finished:
                 measurements = dyno.get_measurements()
 
                 if isinstance(measurements, GetValues):
+                    # if measurements.rpm >= speeds[idx]:
+                    #     idx += 1
+                    #     reach = True
+
                     bp = aerodynamic_drag_power(measurements.rpm / 3)
                     milliamps = bp * 1000 / measurements.v_in
                     dyno.set_ib_current(milliamps)
@@ -153,7 +163,6 @@ def test_dyno(dyno_port) -> None:
 
                     print("RPM:", measurements.rpm, "| Watts", bp)
 
-                time.sleep(0.1)
         except KeyboardInterrupt:
             print("Exiting...")
         finally:
@@ -184,12 +193,6 @@ if __name__ == "__main__":
 
     # Plot the rpm of the results
     # plot_rpm(motor_measurements)
-    rpm = [x["rpm"] for x in motor_measurements]
-    rpm = [x / 3 for x in rpm]
-    f, ax = plt.subplots(1, 2)
-    ax[0].plot(rpm)
-    ax[1].plot(dyno_measurements)
-    plt.show()
 
     # Create dataframe and save results as csv file
     # final_data = pd.DataFrame(motor_measurements)
