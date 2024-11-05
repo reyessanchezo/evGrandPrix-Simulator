@@ -1,7 +1,8 @@
-from pyvesc.protocol.interface import encode_request, encode, decode
-from pyvesc.VESC.messages import *
-import time
 import threading
+import time
+
+from pyvesc.protocol.interface import decode, encode, encode_request
+from pyvesc.VESC.messages import *
 
 # because people may want to use this library for their own messaging, do not make this a required package
 try:
@@ -11,7 +12,14 @@ except ImportError:
 
 
 class VESC(object):
-    def __init__(self, serial_port, has_sensor=False, start_heartbeat=True, baudrate=115200, timeout=0.05):
+    def __init__(
+        self,
+        serial_port,
+        has_sensor=False,
+        start_heartbeat=True,
+        baudrate=115200,
+        timeout=0.05,
+    ):
         """
         :param serial_port: Serial device to use for communication (i.e. "COM3" or "/dev/tty.usbmodem0")
         :param has_sensor: Whether or not the bldc motor is using a hall effect sensor
@@ -22,11 +30,22 @@ class VESC(object):
         """
 
         if serial is None:
-            raise ImportError("Need to install pyserial in order to use the VESCMotor class.")
+            raise ImportError(
+                "Need to install pyserial in order to use the VESCMotor class."
+            )
 
-        self.serial_port = serial.Serial(port=serial_port, baudrate=baudrate, timeout=timeout)
+        try:
+            self.serial_port = serial.Serial(
+                port=serial_port, baudrate=baudrate, timeout=timeout
+            )
+        except serial.SerialException:
+            print("Failed to open serial port: " + serial_port)
+            raise serial.SerialException
+
         if has_sensor:
-            self.serial_port.write(encode(SetRotorPositionMode(SetRotorPositionMode.DISP_POS_OFF)))
+            self.serial_port.write(
+                encode(SetRotorPositionMode(SetRotorPositionMode.DISP_POS_OFF))
+            )
 
         self.heart_beat_thread = threading.Thread(target=self._heartbeat_cmd_func)
         self._stop_heartbeat = threading.Event()
@@ -35,9 +54,9 @@ class VESC(object):
             self.start_heartbeat()
 
         # check firmware version and set GetValue fields to old values if pre version 3.xx
-        version = self.get_firmware_version()
-        if int(version.split('.')[0]) < 3:
-            GetValues.fields = pre_v3_33_fields
+        # version = self.get_firmware_version()
+        # if int(version.split(".")[0]) < 3:
+        #     GetValues.fields = pre_v3_33_fields
 
         # store message info for getting values so it doesn't need to calculate it every time
         msg = GetValues()
@@ -88,7 +107,9 @@ class VESC(object):
         if num_read_bytes is not None:
             while self.serial_port.in_waiting <= num_read_bytes:
                 time.sleep(0.000001)  # add some delay just to help the CPU
-            response, consumed = decode(self.serial_port.read(self.serial_port.in_waiting))
+            response, consumed = decode(
+                self.serial_port.read(self.serial_port.in_waiting)
+            )
             return response
 
     def set_rpm(self, new_rpm):
@@ -103,6 +124,12 @@ class VESC(object):
         :param new_current: new current in milli-amps for the motor
         """
         self.write(encode(SetCurrent(new_current)))
+
+    def set_ib_current(self, new_current):
+        """
+        :param new_current: new current brake in milli-amps for the motor
+        """
+        self.write(encode(SetCurrentBrake(new_current)))
 
     def set_duty_cycle(self, new_duty_cycle):
         """
@@ -120,7 +147,9 @@ class VESC(object):
         """
         :return: A msg object with attributes containing the measurement values
         """
-        return self.write(self._get_values_msg, num_read_bytes=self._get_values_msg_expected_length)
+        return self.write(
+            self._get_values_msg, num_read_bytes=self._get_values_msg_expected_length
+        )
 
     def get_firmware_version(self):
         msg = GetVersion()
@@ -155,7 +184,3 @@ class VESC(object):
         :return: Current incoming current
         """
         return self.get_measurements().current_in
-
-
-
-
