@@ -8,24 +8,26 @@ def rpm_spin(motor, rpm):
     motor.set_rpm(rpm)
 
 def close_motor(motor):
-    motor.set_rpm(rpm)
+    motor.set_rpm(0)
     motor.stop_heartbeat()
     motor.serial_port.flush()
     motor.serial_port.close()
     
 
 def run_two_independent(acceleration_motor_serial, brake_motor_serial):
-    print(f"accelation, brake: {accMotor}, {brkMotor}")
+    print(f"accelation, brake: {acceleration_motor_serial}, {brake_motor_serial}")
     
-    return
+    #return
     # we shouldn't need anything past this until we have two motors
     print("ANYTHING BEYOND THIS POINT ASSUMES THE TWO MOTORS ARE NOT CONNECTED\nCONFIRM THEY ARE NOT CONNECTED TO EACH OTHER")
     cn = input("Type: CONFIRM to continue: ")
 
+    """
     if cn is not "CONFIRM":
         print("RETURNING")
         return
-    
+    """
+
     accRPMs = [2000, 3000, 4000]
     brkRPMs = [4000, 3000, 2000]
 

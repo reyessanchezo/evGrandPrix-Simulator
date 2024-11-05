@@ -199,6 +199,7 @@ if __name__ == "__main__":
             rpm,
         ),
     )
+
     motor2 = threading.Thread(target=test_dyno, args=(s2,))
     motor1.start()
     motor2.start()
