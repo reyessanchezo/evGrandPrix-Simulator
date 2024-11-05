@@ -127,7 +127,7 @@ class VESC(object):
 
     def set_ib_current(self, new_current):
         """
-        :param new_current: new current in milli-amps for the motor
+        :param new_current: new current brake in milli-amps for the motor
         """
         self.write(encode(SetCurrentBrake(new_current)))
 
