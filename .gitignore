@@ -3,3 +3,8 @@ __pycache__/
 docs/
 dist/
 pyvesc.egg-info/
+
+*.png
+*.jpg
+*.csv
+*.log

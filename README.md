@@ -31,26 +31,22 @@ Follow these steps to set up your environment:
      source venv/bin/activate
      ```
 
-4. Navigate to the PyVESC directory:
-
-   ```bash
-   cd PyVESC
-   ```
-
-5. Install the PyVESC package in editable mode:
-
-   ```bash
-   pip install -e .
-   ```
-
-6. Return to the project root directory:
-
-   ```bash
-   cd ..
-   ```
-
-7. Install the required dependencies:
+4. Install the required dependencies:
 
    ```bash
    pip install -r requirements.txt
    ```
+
+(OPTIONAL)
+
+If using conda:
+
+2. Create new conda environment
+```bash
+conda env create -f environment.yml
+```
+
+3. Activate conda environment
+```bash
+conda activate pyvesc
+```
