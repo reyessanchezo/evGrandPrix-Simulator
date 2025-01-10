@@ -3,7 +3,7 @@
 
 # evGrandPrix-Simulator
 
-This repository will contain documentation and files supporting the R. B. Annis evGrandPrix Simulator project. This project aims to build a dynamometer to simulate the stress of racing a gokart around a track and develop a simulator that can determine the optimal racing line given various kart parameters.
+This repository contains documentation and files supporting the R. B. Annis evGrandPrix Simulator project. The team behind this project aims to design, develop, and prototype an platform that emulates the stresses of a gokart racing around a track. This is to be done using only the powertrain for the kart (motor, batteries, controllers, etc) to ensure that the components will endure the race.
 
 # Installation Instructions
 
