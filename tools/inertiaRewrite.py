@@ -5,7 +5,7 @@ import numpy as np
 ##watch out for divide by zero errors
 class Num:
     def __init__(self, op1):
-        self.out = op1
+        self.out = np.longdouble(op1)
     def __add__(self, op2):
         if isinstance(op2, Num):
             res = np.add(self.out, op2.out)
