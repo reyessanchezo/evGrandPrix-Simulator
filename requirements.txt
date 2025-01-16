@@ -19,7 +19,6 @@ python-dateutil==2.9.0.post0
 pythoncrc==1.21
 pytz==2024.1
 PyYAML==6.0.2
-serial==0.0.97
 setuptools==72.1.0
 six==1.16.0
 tornado==6.4.1
