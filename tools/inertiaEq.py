@@ -38,22 +38,11 @@ def dVdT(velocity):
     #print("DT: ", dT)
     V_PREV = velocity
     T_PREV = time
-    print("DVDT: ", dV / dT) ##returns the difference in speed over small time step in seconds
     return (dV / dT) ##returns the difference in speed over small time step in seconds
 
 def acceleration_torque(motorspeed): ##probable inputs
     c = Num(0.005) + ((Num(1) / TIREPRESSURE) * (Num(0.01) + Num(0.0095) * ((Num(3.6) * velocity(motorspeed))/ Num(100))**Num(2)))
     fR = c * MASS * GRAVACCELLERATIONCONST
-    print("FR: ", fR)
     fD = Num(0.5) * DRAGCOEFF * MAXCROSSSECTIONALAREA * AIRDENSITY * (velocity(motorspeed) ** Num(2))
-    print("FD: ", fD)
     fI = MASS * dVdT(velocity(motorspeed))
-    print("FI: ", fI)
     return (fR + fD + fI) #* velocity(motorspeed) ##watts
-
-print("Vel: ", velocity(MOTORSPEED))
-
-print(acceleration_torque(MOTORSPEED))
-print(acceleration_torque(MOTORSPEED))
-print(acceleration_torque(MOTORSPEED))
-print(acceleration_torque(MOTORSPEED))
