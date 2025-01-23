@@ -3,22 +3,19 @@ import numpy as np
 import time as tm
 
 ##STATIC Globals
-TRANSMISSIONEFFICIENCY = Num(0.85)
-TIREDIAMETER = Num(1.0) ##m
+TRANSMISSIONEFFICIENCY = Num(0.9)
+TIREDIAMETER = Num(0.3) ##m
 GEARINGRATIO = Num(1.0) ##tire rev / motor rev
 ROLLINGRESISTANCE = Num(1.0) ##Nm
-MASS = Num(110.0) ##kg
-GRAVACCELLERATIONCONST = Num(1.0) ##m/s^2
-TIREPRESSURE = Num(1.0) ##barr
-DRAGCOEFF = Num(1.0) ##unitless
-MAXCROSSSECTIONALAREA = Num(1.0) ##m^2
-AIRDENSITY = Num(1.0) ##kg/m^3
-POLLINGRATE = Num(0.1) ##10 x per second
+MASS = Num(100.0) ##kg
+GRAVACCELLERATIONCONST = Num(9.8) ##m/s^2
+TIREPRESSURE = Num(2.0) ##barr
+DRAGCOEFF = Num(0.8) ##unitless
+MAXCROSSSECTIONALAREA = Num(0.5) ##m^2
+AIRDENSITY = Num(1.2) ##kg/m^3
 
 ##DYNAMIC Globals
-MOTORSPEED = Num(5.0) ##rev/s
-TORQUE = Num(1.0) ##Nm
-WHEELSPEED = Num(1.0) ##rev/s ???
+MOTORSPEED = Num(21.220659078940496) ##rev/s for vel = 20m/s
 
 ##PREVIOUS Globals
 V_PREV = Num(0.0) ##dv
@@ -41,11 +38,22 @@ def dVdT(velocity):
     #print("DT: ", dT)
     V_PREV = velocity
     T_PREV = time
+    print("DVDT: ", dV / dT) ##returns the difference in speed over small time step in seconds
     return (dV / dT) ##returns the difference in speed over small time step in seconds
 
 def acceleration_torque(motorspeed): ##probable inputs
     c = Num(0.005) + ((Num(1) / TIREPRESSURE) * (Num(0.01) + Num(0.0095) * ((Num(3.6) * velocity(motorspeed))/ Num(100))**Num(2)))
     fR = c * MASS * GRAVACCELLERATIONCONST
+    print("FR: ", fR)
     fD = Num(0.5) * DRAGCOEFF * MAXCROSSSECTIONALAREA * AIRDENSITY * (velocity(motorspeed) ** Num(2))
+    print("FD: ", fD)
     fI = MASS * dVdT(velocity(motorspeed))
-    return (fR + fD + fI) * velocity(motorspeed) ##watts
+    print("FI: ", fI)
+    return (fR + fD + fI) #* velocity(motorspeed) ##watts
+
+print("Vel: ", velocity(MOTORSPEED))
+
+print(acceleration_torque(MOTORSPEED))
+print(acceleration_torque(MOTORSPEED))
+print(acceleration_torque(MOTORSPEED))
+print(acceleration_torque(MOTORSPEED))
