@@ -1,4 +1,4 @@
-name: base
+name: pyvesc_cross
 channels:
   - https://repo.anaconda.com/pkgs/main
   - https://repo.anaconda.com/pkgs/r
