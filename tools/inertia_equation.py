@@ -1,4 +1,4 @@
-from NumClass import Num
+from .NumClass import Num
 import numpy as np
 import time as tm
 
