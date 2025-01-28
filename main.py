@@ -9,7 +9,7 @@ def run(kart_port) -> None:
         try:
             while True:
                 motor.serial_port.flush()
-                motor.set_duty_cycle(0.5)
+                motor.set_duty_cycle(0.1)
                 time.sleep(0.5)
 
         except KeyboardInterrupt:
@@ -35,5 +35,7 @@ def test_dyno(dyno_port) -> None:
 if __name__ == "__main__":
     serial_port = choose_port()
     
-    kart_motor = Process(target=test_dyno, args=(serial_port))
+    kart_motor = Process(target=run, args=(serial_port,))
+    kart_motor.start()
+    kart_motor.join()
 
