@@ -60,4 +60,4 @@ def acceleration_torque(motorspeed):  ##probable inputs
         * (velocity(motorspeed) ** Num(2))
     )
     fI = MASS * dVdT(velocity(motorspeed))
-    return fR + fD + fI  # * velocity(motorspeed) ##watts
+    return fR + fD + fI * velocity(motorspeed) ##watts
