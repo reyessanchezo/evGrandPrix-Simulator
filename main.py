@@ -1,32 +1,39 @@
 from pyvesc import VESC
 import time
-from tools.comport_detection import choose_port
+from pyvesc.VESC.messages.getters import GetValues
+from tools import choose_port, acceleration_torque
+from multiprocessing import Process
 
-DUTY_CYCLE = 0.6
-
-
-def run(s):
-    with VESC(serial_port=s) as motor:
+def run(kart_port) -> None:
+    with VESC(serial_port=kart_port) as motor:
         try:
-            # motor.set_duty_cycle(DUTY_CYCLE)
-            rpms = [2000, 5000]
-            for i in range(30):
-                for rpm in rpms:
-                    motor.serial_port.flush()
-                    motor.set_rpm(rpm)
-                    time.sleep(0.5)
+            while True:
+                motor.serial_port.flush()
+                motor.set_duty_cycle(0.5)
+                time.sleep(0.5)
 
-            print("It finshed")
-            motor.set_rpm(0)
-            motor.serial_port.flush()
-            motor.serial_port.close()
-            return
         except KeyboardInterrupt:
-            motor.set_rpm(0)
-            motor.serial_port.flush()
             motor.serial_port.close()
 
+
+def test_dyno(dyno_port) -> None:
+    with VESC(serial_port=dyno_port) as dyno:
+        try:
+            while True:
+                measurements = dyno.get_measurements()
+
+                if isinstance(measurements, GetValues):
+                    erpm = measurements.rpm
+                    bp = acceleration_torque(erpm / 3)
+                    amps = bp / measurements.v_in
+                    dyno.set_ib_current(amps)
+
+                time.sleep(0.1)
+        except KeyboardInterrupt:
+            dyno.serial_port.close()
 
 if __name__ == "__main__":
     serial_port = choose_port()
-    run(serial_port)
+    
+    kart_motor = Process(target=test_dyno, args=(serial_port))
+
