@@ -1,6 +1,8 @@
-from .NumClass import Num
-import numpy as np
 import time as tm
+
+import numpy as np
+
+from .NumClass import Num
 
 ##STATIC Globals
 TRANSMISSION_EFFICIENCY = Num(0.9)
@@ -28,7 +30,7 @@ def rpm_to_motorspeed(rpm):
 
 
 def velocity(motorspeed):  ##probable inputs
-    return GEARING_RATIO * motorspeed * TIRE_DIAMETER * Num(np.pi)
+    return GEARING_RATIO * rpm_to_motorspeed(motorspeed) * TIRE_DIAMETER * Num(np.pi)
 
 
 def dVdT(velocity):
@@ -40,10 +42,11 @@ def dVdT(velocity):
     dT = time - T_PREV
     V_PREV = velocity
     T_PREV = time
-    return dV / dT  ##returns the difference in speed over small time step in seconds
+    # return dV / dT  ##returns the difference in speed over small time step in seconds
+    return dV / 0.1  # Temporal fix
 
 
-def acceleration_torque(motorspeed):  ##probable inputs
+def acceleration_torque(motorspeed, prev):  ##probable inputs
     c = Num(0.005) + (
         (Num(1) / TIRE_PRESSURE)
         * (
@@ -59,5 +62,5 @@ def acceleration_torque(motorspeed):  ##probable inputs
         * AIR_DENSITY
         * (velocity(motorspeed) ** Num(2))
     )
-    fI = MASS * dVdT(velocity(motorspeed))
-    return fR + fD + fI * velocity(motorspeed) ##watts
+    fI = MASS * (velocity(motorspeed) - velocity(prev)) / 1
+    return fR + fD + fI * velocity(motorspeed)  ##watts

@@ -1,7 +1,9 @@
 import collections
 import struct
-from pyvesc.protocol.packet.exceptions import *
+
 from crccheck.crc import CrcXmodem
+
+from pyvesc.protocol.packet.exceptions import *
 
 crc_checker = CrcXmodem()
 
@@ -42,7 +44,7 @@ class Header(collections.namedtuple('Header', ['payload_index', 'payload_length'
         :param start_byte: The first byte in the buffer.
         :return: The character format of the packet header.
         """
-        if start_byte is 0x2:
+        if start_byte == 0x2:
             return '>BB'
         elif start_byte is 0x3:
             return '>BH'
