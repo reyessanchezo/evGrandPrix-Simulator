@@ -1,5 +1,11 @@
 import serial.tools.list_ports
 
+"""
+
+kart serial_number: 304
+dyno serial_number: "" # it always seems to appear blank. we can still try to use this.
+
+"""
 
 def _serial_ports():
     pyserialPorts = serial.tools.list_ports.comports()
@@ -7,10 +13,6 @@ def _serial_ports():
     for port, desc, hwid in sorted(pyserialPorts):
         result.append((port, desc, hwid))
     return result
-
-
-# code based off of an example from:
-# https://stackoverflow.com/questions/12090503/listing-available-com-ports-with-python
 
 
 def choose_port():
