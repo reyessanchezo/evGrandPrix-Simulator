@@ -28,4 +28,4 @@ if __name__ == '__main__':
     #     we need to overcome to reach the speeds. This may not be required depending on how the dyno works.
     data = read_race_data()
     for row in data:
-        print(f"time: {row[0]}, rpm: {row[1]}")
+        print(f"time: {row[0]}, rpm (?): {row[1]}")
