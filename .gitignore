@@ -8,4 +8,6 @@ pyvesc.egg-info/
 *.jpg
 *.csv
 *.log
-*.DS_Store
+
+.DS_Store
+.idea
