@@ -6,7 +6,6 @@ pyvesc.egg-info/
 
 *.png
 *.jpg
-*.csv
 *.log
 
 .DS_Store
