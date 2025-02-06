@@ -1,22 +1,19 @@
-import csv
 import os
+import pandas as pd
 
-def read_race_data(standardized = False):
-    data = []
+def read_race_data():
     
-    data_path = os.path.join(os.getcwd(), "tools", "race_data.csv")
-    
-    with open(data_path, "r") as file:
-        csv_reader = csv.reader(file)
-        for row in csv_reader:
-            data.append(row)
+    #These two rows should remove the header and the row that shows the units (which both break pandas)
+    data = pd.read_csv("imu_data.csv", skiprows=14)
+    data.drop(0, inplace=True)
 
-    data.pop(0)
-    data = sorted(data, key=lambda x: int(x[0]))
-    if standardized:
-        base = int(data[0][0])
-        data = map(lambda x: [int(x[0]) - base, x[1]], data)
-    return data
+    #fill any NaN with a filler value for now. Ideally, we don't need this when we get better data.
+    data.fillna(0, inplace=True)
+
+    #For my purposes, I only kept these two. If more are needed, consult the CSV for relavent header names.
+    #The garbage data we got from karting didn't record time, so I cannot ensure that row is working properly with what I have right now.
+    #Since the IMU is recorded as acceleration, I need time before I can do math revolving around it. This will need work later.
+    return data[['Time', 'InlineAcc', 'LateralAcc']]
 
 if __name__ == '__main__':
     # i don't know what metric we can read from the csv just yet. rpm is a placeholder.
@@ -27,5 +24,4 @@ if __name__ == '__main__':
     # We can divide the desired rps by the max of the motor to find what duty cycle we may need, but we also need to account for the braking
     #     we need to overcome to reach the speeds. This may not be required depending on how the dyno work while simulating intertia.
     data = read_race_data()
-    for row in data:
-        print(f"time: {row[0]}, rpm (?): {row[1]}")
+    print(data)
