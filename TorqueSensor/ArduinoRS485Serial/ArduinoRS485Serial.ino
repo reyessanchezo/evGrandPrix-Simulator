@@ -58,12 +58,7 @@ void loop()
     Serial.write(byteSent);           // Show on local Serial Monitor window
     digitalWrite(LED_PIN, HIGH);      // Show activity on LED
     delay(10);              
-    
-    digitalWrite(SSERIAL_CTRL_PIN, RS485_TRANSMIT);  // Put RS485 in Transmit mode    
-    Serial.print("Sending: ");  
-    Serial.println(SensorRead);
-    RS485Serial.write(SensorRead);                     // Send the byte back to Master
-    delay(1);                                        // Wait before going back to Receive mode
+
     digitalWrite(SSERIAL_CTRL_PIN, RS485_RECEIVE);   // Put RS485 back into Receive mode 
     digitalWrite(LED_PIN, LOW);                      // Turn LED back off
   }  
