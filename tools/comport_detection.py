@@ -7,6 +7,7 @@ dyno serial_number: "" # it always seems to appear blank. we can still try to us
 
 """
 
+
 def _serial_ports():
     pyserialPorts = serial.tools.list_ports.comports()
     result = []

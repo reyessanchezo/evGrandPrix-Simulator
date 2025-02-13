@@ -1,66 +1,48 @@
-import time as tm
-
 import numpy as np
 
-from .NumClass import Num
-
-##STATIC Globals
-TRANSMISSION_EFFICIENCY = Num(0.9)
-TIRE_DIAMETER = Num(0.3)  ##m
-GEARING_RATIO = Num(1.0)  ##tire rev / motor rev
-ROLLING_RESISTANCE = Num(1.0)  ##Nm
-MASS = Num(100.0)  ##kg
-GRAV_ACCELLERATION = Num(9.8)  ##m/s^2
-TIRE_PRESSURE = Num(2.0)  ##barr
-DRAG_COEFF = Num(0.8)  ##unitless
-MAX_CROSSSECTIONAL_AREA = Num(0.5)  ##m^2
-AIR_DENSITY = Num(1.2)  ##kg/m^3
-
-##DYNAMIC Globals
-MOTOR_SPEED = Num(21.220659078940496)  ##rev/s for vel = 20m/s
-
-##PREVIOUS Globals
-V_PREV = Num(0.0)  ##dv
-T_PREV = Num(tm.time())  ##dt in seconds
+AIR_DENSITY = 1.2  # Air density (kg/m^3)
+DRAG_COEFF = 0.8  # Drag Coefficient (unitless)
+GRAV_ACCELLERATION = 9.8  # Gravity acceleration constant (m/s^2)
+GEARING_RATIO = 1.0  # Gearing Ratio (Tire revolutions / Motor revolutions)
+MASS = 100.0  # Kart mass (kg)
+MAX_CROSSSECTIONAL_AREA = 0.5  # Maximum cross-sectional area (m^2)
+TIRE_DIAMETER = 0.3  # Kart tire diameter (m)
+TIRE_PRESSURE = 2.0  # Tire pressure (barr)
+TRANSMISSION_EFFICIENCY = 0.9  # Need clarification!!!
+ROLLING_RESISTANCE = 1.0  # Nm. Need clarification!!!
 
 
-def rpm_to_motorspeed(rpm):
-    rpmNum = Num(rpm)
-    return rpmNum / Num(60)
+def rpm_to_rps(rpm):
+    """Converting RPM to RPS"""
+    return rpm / 60
 
 
-def velocity(motorspeed):  ##probable inputs
-    return GEARING_RATIO * rpm_to_motorspeed(motorspeed) * TIRE_DIAMETER * Num(np.pi)
+def rpm_to_v(rpm):
+    """Converting RPM to velocity"""
+    return GEARING_RATIO * rpm_to_rps(rpm) * TIRE_DIAMETER * np.pi
 
 
-def dVdT(velocity):
-    global T_PREV
-    global V_PREV
+def acceleration_torque(rpm, dvdt):
+    """
+    Calculates the acceleration torque given an rpm and a difference of speeds across time.
 
-    time = Num(tm.time())  # time in seconds
-    dV = velocity - V_PREV
-    dT = time - T_PREV
-    V_PREV = velocity
-    T_PREV = time
-    # return dV / dT  ##returns the difference in speed over small time step in seconds
-    return dV / 0.1  # Temporal fix
+    Returns the torque in watts.
 
-
-def acceleration_torque(motorspeed, prev):  ##probable inputs
-    c = Num(0.005) + (
-        (Num(1) / TIRE_PRESSURE)
-        * (
-            Num(0.01)
-            + Num(0.0095) * ((Num(3.6) * velocity(motorspeed)) / Num(100)) ** Num(2)
+    Formula = 0.005 + (1/P) (0.01 + 0.0095 ((3.6) v / 100)^2)) m g + (1/2) C_d p A v^2 + m * (dv/dt) = (2 * T * n / Dt) (w_motor / w_wheel)
+                    | First Term                                   | Second Term       | Third Term  |
+    """
+    v = rpm_to_v(rpm)
+    first_term = (
+        (
+            (1 / TIRE_PRESSURE)
+            * (0.01 + 0.0095 * (3.6 * v / 100) ** 2)
+            * MASS
+            * GRAV_ACCELLERATION
         )
+        * MASS
+        * GRAV_ACCELLERATION
     )
-    fR = c * MASS * GRAV_ACCELLERATION
-    fD = (
-        Num(0.5)
-        * DRAG_COEFF
-        * MAX_CROSSSECTIONAL_AREA
-        * AIR_DENSITY
-        * (velocity(motorspeed) ** Num(2))
-    )
-    fI = MASS * (velocity(motorspeed) - velocity(prev)) / 1
-    return fR + fD + fI * velocity(motorspeed)  ##watts
+    second_term = 0.5 * DRAG_COEFF * MAX_CROSSSECTIONAL_AREA * AIR_DENSITY * (v**2)
+    third_term = MASS * dvdt
+
+    return 0.005 + first_term + second_term + third_term

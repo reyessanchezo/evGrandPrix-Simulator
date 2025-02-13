@@ -5,7 +5,9 @@ from pyvesc import VESC
 from pyvesc.VESC.messages.getters import GetValues
 from tools import acceleration_torque, choose_port, rpm_to_motorspeed
 
-prev_erpm = 0
+RATE = 0.001  # Necessary for dv dt.
+prev_rpm = 0
+lamp = [0.0] * 1000
 
 
 def run(kart_port) -> None:
@@ -13,7 +15,7 @@ def run(kart_port) -> None:
         try:
             while True:
                 motor.serial_port.flush()
-                motor.set_duty_cycle(0.25)
+                motor.set_duty_cycle(0.70)
                 time.sleep(0.5)
 
         except KeyboardInterrupt:
@@ -21,28 +23,43 @@ def run(kart_port) -> None:
 
 
 def test_dyno(dyno_port) -> None:
-    global prev_erpm
+    global prev_rpm
     with VESC(serial_port=dyno_port) as dyno:
         try:
-            n = 50
             while True:
                 measurements = dyno.get_measurements()
 
                 if isinstance(measurements, GetValues):
                     erpm = measurements.rpm
-                    print("Dyno RPM:", erpm / 3)
+                    rpm = erpm / 3
+                    dvdt = (rpm - prev_rpm) / RATE
 
-                    bp = acceleration_torque(erpm / 3, prev_erpm / 3)
-                    prev_erpm = erpm
+                    print("Dyno RPM:", rpm)
+                    print("dv/dt:", rpm)
 
-                    print("Breaking watts:", bp)
+                    bp = acceleration_torque(rpm, dvdt)
+                    prev_rpm = erpm
+
+                    print("B Watts:", bp)
                     amps = bp / measurements.v_in
-                    print("Breaking amps:", amps)
-                    if n < 0:
-                        dyno.set_ib_current(amps.out)
-                    n -= 1
 
-                time.sleep(0.1)
+                    if amps >= 70:
+                        amps = 70
+                    elif amps <= -70:
+                        amps = -70
+
+                    lamp.append(float(amps))
+                    lamp.pop(0)
+
+                    avg = sum(lamp) / len(lamp)
+                    print("B Amps:", avg)
+
+                    if avg >= 0:
+                        dyno.set_ib_current(avg)
+                    else:
+                        dyno.set_current(avg)
+
+                time.sleep(RATE)
         except KeyboardInterrupt:
             dyno.serial_port.close()
 
@@ -69,7 +86,6 @@ def test_dyno_breaking_amps(dyno_port, amps) -> None:
 
 
 if __name__ == "__main__":
-    # KART PID=0483:5740
     kart_port = choose_port()
     dyno_port = choose_port()
 
