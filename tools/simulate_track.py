@@ -44,17 +44,8 @@ def track_sim():
 
     TIRE_DIAMETER = 0.3 # meters
 
-    LONG_LENGTH = 12.192 #meters
-    TURN_LENGTH = 7.62 * math.pi #meters
-    TRACK_LENGTH = (2 * TURN_LENGTH) + (2 * LONG_LENGTH)
-
-    distance_global = 0
-    distance_local = 0
-    DISTANCE_TARGET = LONG_LENGTH # may need to rework this later
-
-    speed_current = 0
     SPEED_TARGET = 12.824 # m/s
-    decel_req = (SPEED_TARGET - speed_current) / (DISTANCE_TARGET - distance_local)
+    # decel_req = (SPEED_TARGET - speed_current) / (DISTANCE_TARGET - distance_local)
 
 
     print(f"Simulating track assuming a straight length of {LONG_LENGTH:0.2f} and a turn length of {TURN_LENGTH:0.2f}.\nBasically This:\n")
@@ -67,25 +58,7 @@ def track_sim():
             distance_global += ((RPM / 60) * 0.1) * (TIRE_DIAMETER * math.pi)
             distance_local = distance_global % TRACK_LENGTH
 
-            speed_current = (RPM / 60) * (TIRE_DIAMETER * math.pi)
-
-            decel_req = (SPEED_TARGET - speed_current) / (DISTANCE_TARGET - distance_local)
-
-            # we currently need to make the simulation keep decelerating until it hits the next straightaway.
-            # it doesn't just yet. we need to work on the RaceTurn class.
-            if (decel_req < MAX_DECEL):
-                RPM += (DUMMY_DEC / (TIRE_DIAMETER * math.pi)) * 60
-                print("DECEL")
-                turning = ((distance_local > LONG_LENGTH) and (distance_local < (LONG_LENGTH + TURN_LENGTH))) or (distance_local > (2 * LONG_LENGTH) + TURN_LENGTH)
-                
-
-            else:
-                RPM += (DUMMY_ACC / (TIRE_DIAMETER * math.pi)) * 60
             
-            RPM = max(RPM, MAX_RPM)
-
-            if turning:
-                print("TURNING, ", end="")
 
             print(f"current speed: {speed_current:0.3f}, decel required to reach exit speed: {decel_req:0.3f}, local distance: {distance_local:0.3f}, % along track: {(distance_local/TRACK_LENGTH):0.3f}")
             time.sleep(0.1)
