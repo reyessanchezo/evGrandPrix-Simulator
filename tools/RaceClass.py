@@ -91,13 +91,4 @@ if __name__ == '__main__':
                 tm.sleep(0.1 - timer)
             else:
                 raise TimeoutError("Calculation time longer than polling rate.")
-                
-
-
-
-            
-
-    if raceSeg.turnRadius < 0:
         
-
-    
