@@ -30,7 +30,7 @@ class RaceInfo:
         self.currPositionTrack = 0
     
     def calcTotalLength(self):
-        self.totalLength = sum(self.RaceDetails)
+        self.totalLength = sum(self.RaceDetails) #causes issues "TypeError: unsupported operand type(s) for +: 'int' and 'RaceDetail'"
 
     def __str__(self):
         ret = []
@@ -46,7 +46,7 @@ def csv_to_raceinfo(directory: str | pathlib.Path) -> RaceInfo:
     try:
         data = pd.read_csv(directory)
     except:
-        raise ImportError("Race CSV Imported Error -- Try Checking The CSV Integrity")
+        raise ImportError("Race CSV Import Error -- Try Checking The CSV Integrity")
 
     RaceArray = []
 
@@ -101,7 +101,6 @@ if __name__ == '__main__':
                 pass
             else:
                 raise ValueError("Race turn radius cannot be 0")
-
             end = tm.time()
             timer = end - start
             if 0.1 >= timer:
