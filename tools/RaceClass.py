@@ -109,7 +109,7 @@ if __name__ == '__main__':
             start = tm.time()
             if detail.turnRadius < 0:
                 #if kart in straight away do a straight away !
-                #probaby start seperate thread
+                #probaby start separate thread
 
                 #set throttle to max
                 #set no braking
@@ -123,12 +123,12 @@ if __name__ == '__main__':
                         #keep max throttle
                         pass
                     else:
-                        #set max break
+                        #set max brake
                         break
 
             elif detail.turnRadius > 0:
                 #if kart is in turn do turn !
-                #probaby start seperate thread
+                #probaby start separate thread
                 
                 #set pid throttle ??
                 #set no braking ??
