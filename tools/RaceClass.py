@@ -2,10 +2,12 @@ import math, pathlib
 import pandas as pd
 from typing import Tuple
 import time as tm
+import tqdm
 
 STATICFRICTION = 2.480847866
 GRAV_ACCELLERATION = 9.8
 NUM_LAPS = 50
+POLLING_RATE = 0.1
 
 #Race detail is a section made to designate a portion of the track
 #This class contains a length of the section, a turn radius (if not a race then -1), and if its a turn what the max speed is.
@@ -86,38 +88,68 @@ def tacTranslator(thisRace: RaceInfo, tacometer: int | float) -> Tuple[float, Ra
     segPos = trackPos - rollingPos
     return segPos, thisRace.RaceDetails[trackID]
 
+def brakePossible() -> None:
+    #THIS FUNCTION ISNT DONE YET
+    pass
+
 if __name__ == '__main__':
     thisRace = csv_to_raceinfo("raceCSV.csv")
     
     print(thisRace)
-    currSegDistance, raceSeg = tacTranslator(thisRace, 38)
+    #currSegDistance, raceSeg = tacTranslator(thisRace, 38)
     print(f'Number of laps: {NUM_LAPS}')
+    print(f'Total Expected time: {POLLING_RATE * len(thisRace.RaceDetails) * NUM_LAPS}, Polling Rate: {POLLING_RATE}')
+
     lapCur = 0
 
-    for lap in range(NUM_LAPS):
+    totalStart = tm.time()
+    for lap in tqdm.tqdm(range (NUM_LAPS), desc="Running Race...", ascii=False, dynamic_ncols=True):
+        
         for detail in thisRace.RaceDetails:
             start = tm.time()
-            if raceSeg.turnRadius < 0:
-                #print('Straight.')
+            if detail.turnRadius < 0:
                 #if kart in straight away do a straight away !
                 #probaby start seperate thread
-                pass
-            elif raceSeg.turnRadius > 0:
-                #print('Turn.')
+
+                #set throttle to max
+                #set no braking
+
+                #this needs to be set to the actual tacometer value every loop
+                tacometer_curr_distance = 0
+                currSegDistance, raceSeg = tacTranslator(thisRace, tacometer_curr_distance)
+                
+                while detail.length > currSegDistance:
+                    if brakePossible():
+                        #keep max throttle
+                        pass
+                    else:
+                        #set max break
+                        break
+
+            elif detail.turnRadius > 0:
                 #if kart is in turn do turn !
                 #probaby start seperate thread
-                pass
+                
+                #set pid throttle ??
+                #set no braking ??
+
+                tacometer_curr_distance = 0
+                currSegDistance, raceSeg = tacTranslator(thisRace, tacometer_curr_distance)
+                while detail.length > currSegDistance:
+                    #set pid throttle
+                    break
             else:
                 raise ValueError("Race turn radius cannot be 0")
             
             end = tm.time()
             timer = end - start
             #print(f'Execuction time: {timer}')
-            
+
             if 0.1 >= timer:
-                tm.sleep(0.1 - timer)
+                tm.sleep(POLLING_RATE - timer)
             else:
                 raise TimeoutError("Calculation time longer than polling rate.")
         lapCur += 1
-        print(lapCur)
-    
+        #print(f'Current Lap: {lapCur}')
+    totalEnd = tm.time()
+    print(f'Total execution time: {totalEnd - totalStart}')
