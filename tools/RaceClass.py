@@ -2,6 +2,7 @@ import math, pathlib
 import pandas as pd
 from typing import Tuple
 import time as tm
+
 STATICFRICTION = 2.480847866
 GRAV_ACCELLERATION = 9.8
 
@@ -42,15 +43,22 @@ class RaceInfo:
 
 #this function is used to translate a csv into a filled out race info class also containing race details as an array
 def csv_to_raceinfo(directory: str | pathlib.Path) -> RaceInfo:
-    data = pd.read_csv(directory)
+    try:
+        data = pd.read_csv(directory)
+    except:
+        raise ImportError("Race CSV Imported Error -- Try Checking The CSV Integrity")
 
     RaceArray = []
 
-    for index, row in data.iterrows():
-        if pd.isna(row['Turn Radius']):
-            RaceArray.append(RaceDetail(length=row['Length']))
-        else:
-            RaceArray.append(RaceDetail(length=row['Length'], turnRadius=row['Turn Radius']))
+    try:
+        for index, row in data.iterrows():
+            if pd.isna(row['Turn Radius']):
+                RaceArray.append(RaceDetail(length=row['Length']))
+            else:
+                RaceArray.append(RaceDetail(length=row['Length'], turnRadius=row['Turn Radius']))
+    except:
+        raise ValueError("Race CSV Reading Error -- Try Checking Race CSV Format")
+
     
     thisRace = RaceInfo(RaceArray)
     return thisRace
@@ -84,11 +92,20 @@ if __name__ == '__main__':
             #main event loop for race
             start = tm.time()
             if raceSeg.turnRadius < 0:
+                #if kart in straight away do a straight away !
+                #probaby start seperate thread
                 pass
+            elif raceSeg.turnRadius > 0:
+                #if kart is in turn do turn !
+                #probaby start seperate thread
+                pass
+            else:
+                raise ValueError("Race turn radius cannot be 0")
+
             end = tm.time()
             timer = end - start
-            if 0.1 > timer:
+            if 0.1 >= timer:
                 tm.sleep(0.1 - timer)
             else:
                 raise TimeoutError("Calculation time longer than polling rate.")
-        
+
