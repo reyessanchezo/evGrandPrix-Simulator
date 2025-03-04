@@ -92,11 +92,10 @@ if __name__ == '__main__':
     print(thisRace)
     currSegDistance, raceSeg = tacTranslator(thisRace, 38)
     print(f'Number of laps: {NUM_LAPS}')
-    NUM_LAPS *= len(thisRace.RaceDetails)
+    lapCur = 0
 
-    if thisRace.isLoop:
-        for lap in range(NUM_LAPS):
-            #main event loop for race
+    for lap in range(NUM_LAPS):
+        for detail in thisRace.RaceDetails:
             start = tm.time()
             if raceSeg.turnRadius < 0:
                 #print('Straight.')
@@ -113,8 +112,12 @@ if __name__ == '__main__':
             
             end = tm.time()
             timer = end - start
+            #print(f'Execuction time: {timer}')
+            
             if 0.1 >= timer:
                 tm.sleep(0.1 - timer)
             else:
                 raise TimeoutError("Calculation time longer than polling rate.")
-
+        lapCur += 1
+        print(lapCur)
+    
