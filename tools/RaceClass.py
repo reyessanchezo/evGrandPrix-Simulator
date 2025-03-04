@@ -5,6 +5,7 @@ import time as tm
 
 STATICFRICTION = 2.480847866
 GRAV_ACCELLERATION = 9.8
+NUM_LAPS = 50
 
 #Race detail is a section made to designate a portion of the track
 #This class contains a length of the section, a turn radius (if not a race then -1), and if its a turn what the max speed is.
@@ -30,7 +31,11 @@ class RaceInfo:
         self.currPositionTrack = 0
     
     def calcTotalLength(self):
-        self.totalLength = sum(self.RaceDetails) #causes issues "TypeError: unsupported operand type(s) for +: 'int' and 'RaceDetail'"
+        #self.totalLength = sum(self.RaceDetails) #causes issues "TypeError: unsupported operand type(s) for +: 'int' and 'RaceDetail'"
+        self.totalLength = 0
+        for RaceDetail in self.RaceDetails:
+            self.totalLength += RaceDetail.length
+
 
     def __str__(self):
         ret = []
@@ -83,24 +88,29 @@ def tacTranslator(thisRace: RaceInfo, tacometer: int | float) -> Tuple[float, Ra
 
 if __name__ == '__main__':
     thisRace = csv_to_raceinfo("raceCSV.csv")
-    numLaps = 50
+    
     print(thisRace)
     currSegDistance, raceSeg = tacTranslator(thisRace, 38)
-    
+    print(f'Number of laps: {NUM_LAPS}')
+    NUM_LAPS *= len(thisRace.RaceDetails)
+
     if thisRace.isLoop:
-        for lap in range(numLaps):
+        for lap in range(NUM_LAPS):
             #main event loop for race
             start = tm.time()
             if raceSeg.turnRadius < 0:
+                #print('Straight.')
                 #if kart in straight away do a straight away !
                 #probaby start seperate thread
                 pass
             elif raceSeg.turnRadius > 0:
+                #print('Turn.')
                 #if kart is in turn do turn !
                 #probaby start seperate thread
                 pass
             else:
                 raise ValueError("Race turn radius cannot be 0")
+            
             end = tm.time()
             timer = end - start
             if 0.1 >= timer:
