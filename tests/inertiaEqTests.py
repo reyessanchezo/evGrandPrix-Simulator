@@ -1,4 +1,3 @@
-from NumClass import Num
 import numpy as np
 
 # import inertiaEq

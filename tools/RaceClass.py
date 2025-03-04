@@ -70,9 +70,9 @@ def csv_to_raceinfo(directory: str | pathlib.Path) -> RaceInfo:
     thisRace = RaceInfo(RaceArray)
     return thisRace
 
-#tacTranslator changes the tacometer for distance traveled on the track to a segment ID for which section its in and also a current distance into the length of that section 
-#Ex.: tacTranslator(thisRace, 38) --> distance into track (1.86906398) and the RaceDetail object the tacometer distance is currently driving in
-def tacTranslator(thisRace: RaceInfo, tacometer: int | float) -> Tuple[float, RaceDetail]:
+#odTranslator changes the odometer for distance traveled on the track to a segment ID for which section its in and also a current distance into the length of that section 
+#Ex.: odTranslator(thisRace, 38) --> distance into track (1.86906398) and the RaceDetail object the tacometer distance is currently driving in
+def odTranslator(thisRace: RaceInfo, tacometer: int | float) -> Tuple[float, RaceDetail]:
     trackPos = tacometer % thisRace.totalLength
     rollingTac = 0
     trackID = 0
@@ -96,15 +96,14 @@ if __name__ == '__main__':
     thisRace = csv_to_raceinfo("raceCSV.csv")
     
     print(thisRace)
-    #currSegDistance, raceSeg = tacTranslator(thisRace, 38)
+    #currSegDistance, raceSeg = odTranslator(thisRace, 38)
     print(f'Number of laps: {NUM_LAPS}')
     print(f'Total Expected time: {POLLING_RATE * len(thisRace.RaceDetails) * NUM_LAPS}, Polling Rate: {POLLING_RATE}')
 
     lapCur = 0
 
     totalStart = tm.time()
-    for lap in tqdm.tqdm(range (NUM_LAPS), desc="Running Race...", ascii=False, dynamic_ncols=True):
-        
+    for lap in tqdm.tqdm(range (NUM_LAPS), desc="Running Race...", ascii=True, dynamic_ncols=True):
         for detail in thisRace.RaceDetails:
             start = tm.time()
             if detail.turnRadius < 0:
@@ -116,7 +115,7 @@ if __name__ == '__main__':
 
                 #this needs to be set to the actual tacometer value every loop
                 tacometer_curr_distance = 0
-                currSegDistance, raceSeg = tacTranslator(thisRace, tacometer_curr_distance)
+                currSegDistance, raceSeg = odTranslator(thisRace, tacometer_curr_distance)
                 
                 while detail.length > currSegDistance:
                     if brakePossible():
@@ -133,8 +132,9 @@ if __name__ == '__main__':
                 #set pid throttle ??
                 #set no braking ??
 
+                #this needs to be set to the actual tacometer value every loop
                 tacometer_curr_distance = 0
-                currSegDistance, raceSeg = tacTranslator(thisRace, tacometer_curr_distance)
+                currSegDistance, raceSeg = odTranslator(thisRace, tacometer_curr_distance)
                 while detail.length > currSegDistance:
                     #set pid throttle
                     break
