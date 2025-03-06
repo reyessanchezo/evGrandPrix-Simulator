@@ -7,11 +7,11 @@ import tqdm
 import os
 import matplotlib.pyplot as plt
 
-rpm = 1000
+vel = 15
 POLLINGRATE = 0.1
 
-pid = PID(5, 0.01, 0.1, setpoint=rpm)
-pid.output_limits = (0, 5000)
+pid = PID(5, 0.01, 0.1, setpoint=15)
+pid.output_limits = (0, 30)
 
 class Driver:
     """"
