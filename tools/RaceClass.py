@@ -217,9 +217,7 @@ if __name__ == '__main__':
                     power = pid(currentVoltage)
                     currentVoltage = object.update(power, dt)
 
-                    if brakePossible(currSegDistance, thisRace, raceSeg):
-                        pid.setpoint = 100000
-                    else:
+                    if not brakePossible(currSegDistance, thisRace, raceSeg):
                         pid.setpoint = 0
 
                     #send voltage motor NEEDS WORK NEEDS TO APPLY TO MOTOR STILL--------------------------
