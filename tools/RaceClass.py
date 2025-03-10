@@ -3,12 +3,24 @@ import pandas as pd
 from typing import Tuple
 import time as tm
 import tqdm
+from simple_pid import PID
 
 STATICFRICTION = 2.480847866
-GRAV_ACCELLERATION = 9.8
 NUM_LAPS = 50
 POLLING_RATE = 0.1
 
+AIR_DENSITY = 1.2  # Air density (kg/m^3)
+DRAG_COEFF = 0.8  # Drag Coefficient (unitless)
+GRAV_ACCELLERATION = 9.8  # Gravity acceleration constant (m/s^2)
+GEARING_RATIO = 1.0  # Gearing Ratio (Tire revolutions / Motor revolutions)
+MASS = 100.0  # Kart mass (kg)
+MAX_CROSSSECTIONAL_AREA = 0.5  # Maximum cross-sectional area (m^2)
+TIRE_DIAMETER = 0.3  # Kart tire diameter (m)
+TIRE_PRESSURE = 2.0  # Tire pressure (barr)
+TRANSMISSION_EFFICIENCY = 0.9  # Need clarification!!!
+ROLLING_RESISTANCE = 1.0  # Nm. Need clarification!!!
+
+MOTORTORQUE = 3.7 * 3  ##Nm
 #Race detail is a section made to designate a portion of the track
 #This class contains a length of the section, a turn radius (if not a race then -1), and if its a turn what the max speed is.
 class RaceDetail:
@@ -19,7 +31,8 @@ class RaceDetail:
             self.calcMaxSpeed(turnRadius)
         
     def calcMaxSpeed(self, turnRadius):
-        self.max_speed = math.sqrt(STATICFRICTION * GRAV_ACCELLERATION * turnRadius)
+        self.maxSpeed = math.sqrt(STATICFRICTION * GRAV_ACCELLERATION * turnRadius)
+        self.maxRPM = self.maxSpeed / (math.pi * TIRE_DIAMETER * GEARING_RATIO) * 60
 
 # The class that contains information pertaining to the entire track. 
 # This includes the segments of the track, total length, and positional data.
@@ -88,10 +101,76 @@ def odTranslator(thisRace: RaceInfo, tacometer: int | float) -> Tuple[float, Rac
     segPos = trackPos - rollingPos
     return segPos, thisRace.RaceDetails[trackID]
 
-def brakePossible() -> None:
+def rpm_to_motorspeed(rpm):
+    rpmNum = rpm
+    return rpmNum * 60
+
+def velocity(motorspeed):  ##probable inputs
+    return GEARING_RATIO * rpm_to_motorspeed(motorspeed) * TIRE_DIAMETER * math.pi
+
+
+def max_acceleration (motor_speed):
+    kartMaxForce = (2 * MOTORTORQUE * GEARING_RATIO * TRANSMISSION_EFFICIENCY) / (MASS * TIRE_DIAMETER)
+    kartBreakAwayForce = 0.99 * GRAV_ACCELLERATION * STATICFRICTION
+    vel = velocity(motor_speed)
+    chunk2 = (DRAG_COEFF * MAX_CROSSSECTIONAL_AREA * AIR_DENSITY * velocity(motor_speed) ** 2) / (MASS * 2)
+    chunk3 = 0.005 + (1 / TIRE_PRESSURE) * (0.01 + 0.0095 * ((3.6 * velocity(motor_speed)) / 100) ** 2) * GRAV_ACCELLERATION
+    if kartMaxForce > kartBreakAwayForce:
+        return kartBreakAwayForce - chunk2 - chunk3
+    else:
+        return kartMaxForce - chunk2 - chunk3
+
+def max_braking(motor_speed):
+    kartBreakAwayForce = 0.99 * GRAV_ACCELLERATION * STATICFRICTION
+    chunk2 = (DRAG_COEFF * MAX_CROSSSECTIONAL_AREA * AIR_DENSITY * velocity(motor_speed) ** 2) / (MASS * 2)
+    chunk3 = 0.005 + (1 / TIRE_PRESSURE) * (0.01 + 0.0095 * ((3.6 * velocity(motor_speed)) / 100) ** 2) * GRAV_ACCELLERATION
+    return (-1 * kartBreakAwayForce) - chunk2 - chunk3
+
+def brakePossible(curSegDistance, raceinfo, trackID) -> bool:
     #THIS FUNCTION ISNT DONE YET
+    exitrpm = raceinfo.RaceDetials[trackID + 1].maxRPM
+    exitrps = rpm_to_motorspeed(exitrpm)
+    maxBrake = max_braking(exitrps)
+
+    y1 = velocity(rpm_to_motorspeed(0)) #USE CURRENT RPM IN HERE
+    x1 = curSegDistance
+
+    y2 = velocity(exitrps)
+    x2 = raceinfo.RaceDetials[trackID].length
+
+    currSlope = (y2 - y1)/(x2 - x1)
+
+    if abs(currSlope) > abs(maxBrake):
+        return False
+    else:
+        return True
+
+
+    #STILL WORK IN PROGRESS
+    
+
+
     pass
 
+def num_to_range(num, inMin, inMax, outMin, outMax):
+  return outMin + (float(num - inMin) / float(inMax - inMin) * (outMax - outMin))
+
+def RPMtoVoltage(rpm):
+    return num_to_range(rpm, 0, 4500, 0.9, 4.1)
+
+class KartVoltage:
+    def __init__(self):
+        self.current = 0 #volts
+    
+    def update(self, power, dt):
+        if power > 0:
+            # PROBLEM LIES HERE
+            self.current += 1 * power * dt
+
+        # Some heat dissipation
+        #self.water_temp -= 0.02 * dt
+        return self.current
+    
 if __name__ == '__main__':
     thisRace = csv_to_raceinfo("raceCSV.csv")
     
@@ -109,46 +188,83 @@ if __name__ == '__main__':
             if detail.turnRadius < 0:
                 #if kart in straight away do a straight away !
                 #probaby start separate thread
-
-                #set throttle to max
-                #set no braking
+                #if kart is in turn do turn !
+                outVoltage = None
 
                 #this needs to be set to the actual tacometer value every loop
                 tacometer_curr_distance = 0
                 currSegDistance, raceSeg = odTranslator(thisRace, tacometer_curr_distance)
                 
+                #PID LOOP
+                object = KartVoltage()
+
+                currentRPM = object.current #READ ACTUAL RPM I BEG OF YOU
+                currentVoltage = RPMtoVoltage(currentRPM)
+
+                goalRPM = 1000000
+                goalVoltage = RPMtoVoltage(goalRPM)
+
+                pid = PID(3, 0.01, 0.1, setpoint=goalVoltage)
+                pid.output_limits = (0, 5)
+
+                startTime = tm.time()
+                lastTime = startTime
+                
                 while detail.length > currSegDistance:
-                    if brakePossible():
-                        #keep max throttle
-                        pass
-                    else:
-                        #set max brake
-                        break
+                    #set pid throttle
+                    currentTme = tm.time()
+                    dt = currentTme - lastTime
+                    power = pid(currentVoltage)
+                    currentVoltage = object.update(power, dt)
+
+                    if not brakePossible(currSegDistance, thisRace, raceSeg):
+                        pid.setpoint = 0
+
+                    #send voltage motor NEEDS WORK NEEDS TO APPLY TO MOTOR STILL--------------------------
+                    outVoltage = object.current
+
+                    lastTime = tm.time()
+                    tm.sleep(abs(0.1 - (lastTime - currentTme)))
 
             elif detail.turnRadius > 0:
                 #if kart is in turn do turn !
-                #probaby start separate thread
-                
-                #set pid throttle ??
-                #set no braking ??
+                outVoltage = None
 
                 #this needs to be set to the actual tacometer value every loop
                 tacometer_curr_distance = 0
                 currSegDistance, raceSeg = odTranslator(thisRace, tacometer_curr_distance)
+                
+                #PID LOOP
+                object = KartVoltage()
+
+                currentRPM = object.current #READ ACTUAL RPM I BEG OF YOU
+                currentVoltage = RPMtoVoltage(currentRPM)
+
+                goalRPM = detail.maxRPM
+                goalVoltage = RPMtoVoltage(goalRPM)
+
+                pid = PID(3, 0.01, 0.1, setpoint=goalVoltage)
+                pid.output_limits = (0, 5)
+
+                startTime = tm.time()
+                lastTime = startTime
+                
                 while detail.length > currSegDistance:
                     #set pid throttle
-                    break
+                    currentTme = tm.time()
+                    dt = currentTme - lastTime
+                    power = pid(currentVoltage)
+                    currentVoltage = object.update(power, dt)
+
+                    #send voltage motor NEEDS WORK NEEDS TO APPLY TO MOTOR STILL--------------------------
+                    outVoltage = object.current
+
+                    lastTime = tm.time()
+                    tm.sleep(abs(0.1 - (lastTime - currentTme)))
+
             else:
                 raise ValueError("Race turn radius cannot be 0")
             
-            end = tm.time()
-            timer = end - start
-            #print(f'Execuction time: {timer}')
-
-            if 0.1 >= timer:
-                tm.sleep(POLLING_RATE - timer)
-            else:
-                raise TimeoutError("Calculation time longer than polling rate.")
         lapCur += 1
         #print(f'Current Lap: {lapCur}')
     totalEnd = tm.time()
