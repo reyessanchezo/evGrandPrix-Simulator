@@ -108,7 +108,6 @@ def rpm_to_motorspeed(rpm):
 def velocity(motorspeed):  ##probable inputs
     return GEARING_RATIO * rpm_to_motorspeed(motorspeed) * TIRE_DIAMETER * math.pi
 
-
 def max_acceleration (motor_speed):
     kartMaxForce = (2 * MOTORTORQUE * GEARING_RATIO * TRANSMISSION_EFFICIENCY) / (MASS * TIRE_DIAMETER)
     kartBreakAwayForce = 0.99 * GRAV_ACCELLERATION * STATICFRICTION
@@ -147,10 +146,6 @@ def brakePossible(curSegDistance, raceinfo, trackID) -> bool:
 
 
     #STILL WORK IN PROGRESS
-    
-
-
-    pass
 
 def num_to_range(num, inMin, inMax, outMin, outMax):
   return outMin + (float(num - inMin) / float(inMax - inMin) * (outMax - outMin))
@@ -166,9 +161,6 @@ class KartVoltage:
         if power > 0:
             # PROBLEM LIES HERE
             self.current += 1 * power * dt
-
-        # Some heat dissipation
-        #self.water_temp -= 0.02 * dt
         return self.current
     
 if __name__ == '__main__':
