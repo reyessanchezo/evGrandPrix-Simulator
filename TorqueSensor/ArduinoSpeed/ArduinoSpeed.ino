@@ -1,19 +1,37 @@
+#include <SoftwareSerial.h>
+
+// Define software serial pins
+const int RX_PIN = 10;   // Connect to RS485 module RO (Receiver Output)
+const int TX_PIN = 11;   // Connect to RS485 module DI (Driver Input)
+const int DE_RE_PIN = 2; // Connect to RS485 module DE and RE (Driver/Receiver Enable)
+SoftwareSerial rs485Serial(RX_PIN, TX_PIN);
+
+
+// Analog measurement constants
 const byte encoderPin = 3;       // Encoder output connected to digital pin 3
 const byte torquePin = A4;       // Torque output connected to Analog pin 4
 volatile unsigned long pulseCount = 0;
 unsigned long previousMillis = 0;
-const float interval = 10.0; // Output interval (milliseconds)
+const float interval = 50.0; // Output interval (milliseconds)
 const float pulsesPerRevolution = 60.0;
 const float intervalPerMinute = 60000.0 / interval;
 const byte ledPin = 13;
 float rpm = 0.0;
-float torque = 0.0;
+float analogTorque;
+String digitalTorque;
 int actualInterval = 0;
 unsigned long count = 0;
 unsigned long long currentMillis = 0;
+unsigned long long totalRevolutions = 0;
 
 void setup() {
   Serial.begin(115200);
+  rs485Serial.begin(19200);
+
+  // Set RS485 module control pin and default to receive mode
+  pinMode(DE_RE_PIN, OUTPUT);
+  digitalWrite(DE_RE_PIN, LOW); // LOW for receive mode
+
   pinMode(encoderPin, INPUT_PULLUP);
   pinMode(torquePin, INPUT);
   pinMode(ledPin, OUTPUT);
@@ -21,6 +39,10 @@ void setup() {
 }
 
 void loop() {
+  if (rs485Serial.available() > 50) {
+    digitalTorque = rs485Serial.readStringUntil('\r');
+    digitalTorque.trim();
+  }
   currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
     noInterrupts(); // Temporarily disable interrupts for accurate count
@@ -33,17 +55,19 @@ void loop() {
     
     
     // Calculate values
-    torque = ((analogRead(torquePin) * 60.0) / 1023.0) - 30.0;
-    rpm = count * (1000/actualInterval) * 60 / pulsesPerRevolution / 2;
+    analogTorque = ((analogRead(torquePin) * 60.0) / 1023.0) - 30.0;
+    rpm = ((float)count * (1000.0/(float)actualInterval) * 60.0) / (float)pulsesPerRevolution;
     Serial.print("RPM: ");
-    Serial.print(rpm, 1);
-    Serial.print(" Torque(Nm): ");
-    Serial.println(torque, 2);
+    Serial.print(rpm, 2);
+    Serial.print(" \tAnalog Torque(Nm): ");
+    Serial.print(analogTorque, 2);
+    Serial.println(" \tRS485 Torque(Nm): " + digitalTorque);
   }
   
 }
 
 void countPulse() {
   pulseCount++;
+  totalRevolutions++;
   digitalWrite(ledPin, !digitalRead(ledPin));
 }
