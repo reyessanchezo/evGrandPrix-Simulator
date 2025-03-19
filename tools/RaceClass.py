@@ -108,7 +108,6 @@ def rpm_to_motorspeed(rpm):
 def velocity(motorspeed):  ##probable inputs
     return GEARING_RATIO * rpm_to_motorspeed(motorspeed) * TIRE_DIAMETER * math.pi
 
-
 def max_acceleration (motor_speed):
     kartMaxForce = (2 * MOTORTORQUE * GEARING_RATIO * TRANSMISSION_EFFICIENCY) / (MASS * TIRE_DIAMETER)
     kartBreakAwayForce = 0.99 * GRAV_ACCELLERATION * STATICFRICTION
@@ -122,41 +121,44 @@ def max_acceleration (motor_speed):
 
 def max_braking(motor_speed):
     kartBreakAwayForce = 0.99 * GRAV_ACCELLERATION * STATICFRICTION
-    chunk2 = (DRAG_COEFF * MAX_CROSSSECTIONAL_AREA * AIR_DENSITY * velocity(motor_speed) ** 2) / (MASS * 2)
-    chunk3 = 0.005 + (1 / TIRE_PRESSURE) * (0.01 + 0.0095 * ((3.6 * velocity(motor_speed)) / 100) ** 2) * GRAV_ACCELLERATION
-    return (-1 * kartBreakAwayForce) - chunk2 - chunk3
+    ##chunk3 = 0.005 + (1 / TIRE_PRESSURE) * (0.01 + 0.0095 * ((3.6 * velocity(motor_speed)) / 100) ** 2) * GRAV_ACCELLERATION
+    return (-1 * kartBreakAwayForce) #- chunk2 - chunk3
 
 def brakePossible(curSegDistance, raceinfo, trackID) -> bool:
-    #THIS FUNCTION ISNT DONE YET
     exitrpm = raceinfo.RaceDetials[trackID + 1].maxRPM
     exitrps = rpm_to_motorspeed(exitrpm)
-    maxBrake = max_braking(exitrps)
 
-    y1 = velocity(rpm_to_motorspeed(0)) #USE CURRENT RPM IN HERE
-    x1 = curSegDistance
+    y1 = velocity(rpm_to_motorspeed(readRPM()))
 
     y2 = velocity(exitrps)
-    x2 = raceinfo.RaceDetials[trackID].length
 
-    currSlope = (y2 - y1)/(x2 - x1)
+    distance = ( (y2)**2 - (y1)**2 )/(2 * max_braking(0))
 
-    if abs(currSlope) > abs(maxBrake):
-        return False
-    else:
-        return True
-
-
+    return curSegDistance > distance
     #STILL WORK IN PROGRESS
-    
-
-
-    pass
 
 def num_to_range(num, inMin, inMax, outMin, outMax):
   return outMin + (float(num - inMin) / float(inMax - inMin) * (outMax - outMin))
 
 def RPMtoVoltage(rpm):
     return num_to_range(rpm, 0, 4500, 0.9, 4.1)
+
+
+#Read from kart. Must implement later when functionality is available.
+
+def readTac():
+    """READ Tachometer"""
+    return 0
+
+def readRPM():
+    """READ MOTOR RPM"""
+    return 0
+
+def sendVoltage(voltage):
+    """SEND A VOLTAGE"""
+    pass
+
+#######
 
 class KartVoltage:
     def __init__(self):
@@ -166,9 +168,6 @@ class KartVoltage:
         if power > 0:
             # PROBLEM LIES HERE
             self.current += 1 * power * dt
-
-        # Some heat dissipation
-        #self.water_temp -= 0.02 * dt
         return self.current
     
 if __name__ == '__main__':
@@ -192,13 +191,13 @@ if __name__ == '__main__':
                 outVoltage = None
 
                 #this needs to be set to the actual tacometer value every loop
-                tacometer_curr_distance = 0
+                tacometer_curr_distance = readTac()
                 currSegDistance, raceSeg = odTranslator(thisRace, tacometer_curr_distance)
                 
                 #PID LOOP
                 object = KartVoltage()
 
-                currentRPM = object.current #READ ACTUAL RPM I BEG OF YOU
+                currentRPM = readRPM()
                 currentVoltage = RPMtoVoltage(currentRPM)
 
                 goalRPM = 1000000
@@ -220,8 +219,8 @@ if __name__ == '__main__':
                     if not brakePossible(currSegDistance, thisRace, raceSeg):
                         pid.setpoint = 0
 
-                    #send voltage motor NEEDS WORK NEEDS TO APPLY TO MOTOR STILL--------------------------
                     outVoltage = object.current
+                    sendVoltage(outVoltage)
 
                     lastTime = tm.time()
                     tm.sleep(abs(0.1 - (lastTime - currentTme)))
@@ -231,13 +230,13 @@ if __name__ == '__main__':
                 outVoltage = None
 
                 #this needs to be set to the actual tacometer value every loop
-                tacometer_curr_distance = 0
+                tacometer_curr_distance = readTac()
                 currSegDistance, raceSeg = odTranslator(thisRace, tacometer_curr_distance)
                 
                 #PID LOOP
                 object = KartVoltage()
 
-                currentRPM = object.current #READ ACTUAL RPM I BEG OF YOU
+                currentRPM = readRPM()
                 currentVoltage = RPMtoVoltage(currentRPM)
 
                 goalRPM = detail.maxRPM
@@ -256,8 +255,7 @@ if __name__ == '__main__':
                     power = pid(currentVoltage)
                     currentVoltage = object.update(power, dt)
 
-                    #send voltage motor NEEDS WORK NEEDS TO APPLY TO MOTOR STILL--------------------------
-                    outVoltage = object.current
+                    sendVoltage(outVoltage)
 
                     lastTime = tm.time()
                     tm.sleep(abs(0.1 - (lastTime - currentTme)))

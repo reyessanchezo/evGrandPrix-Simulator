@@ -4,7 +4,7 @@
 // Define software serial pins
 const int RX_PIN = 10;   // Connect to RS485 module RO (Receiver Output)
 const int TX_PIN = 11;   // Connect to RS485 module DI (Driver Input)
-const int DE_RE_PIN = 3; // Connect to RS485 module DE and RE (Driver Enable and Receiver Enable)
+const int DE_RE_PIN = 2; // Connect to RS485 module DE and RE (Driver Enable and Receiver Enable)
 
 // Create software serial instance
 SoftwareSerial mySerial(RX_PIN, TX_PIN);

@@ -48,8 +48,8 @@ def PIDInit(reach_rpm : int, ):
         #print('POWER: ', power)
         currentVoltage = object.update(power, dt)
         #print('CURRENT: ', currentVoltage)
+
+        #
+
         lastTime = time.time()
         time.sleep(abs(0.1 - (lastTime - currentTme)))
-        if (lastTime - startTime) > 5:
-                targetRPM = 2500
-                pid.setpoint = RPMtoVoltage(targetRPM)
