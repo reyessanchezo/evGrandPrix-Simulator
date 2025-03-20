@@ -7,12 +7,16 @@ from queue import Queue, Empty
 def readingSerial(ser, event):
     while not event.is_set():
         if ser.in_waiting > 0:
-            received_data = ser.read(4).decode('utf-8').strip()
-            print(f"Arduino says: {str(received_data)}")
+            try:
+                received_data = ser.readline().decode('utf-8').strip()
+                #print(f"{str(received_data)}")
+                print(received_data.split())
+            except:
+                print("dead packet")
 
 # Sends the voltage from the Queue to the Arduino.
 def writeVoltage(serial_port: serial, queue: Queue):
-    ser = serial.Serial(serial_port, 115200, timeout=0)
+    ser = serial.Serial(serial_port, 115200, timeout=None)
 
     # This is a thread to receive signals from the testing Arduino.
     stop_event = Event()
@@ -37,10 +41,9 @@ def writeVoltage(serial_port: serial, queue: Queue):
                     ser.close()
                     break
                 
-                print(f"Processing {item}")
+                #print(f"Processing {item}")
                 ser.write(bytes(str(item)+"\r", 'utf-8'))
                 queue.task_done()
-                time.sleep(0.5)
 
     except KeyboardInterrupt as e:
         print(f"Enter program.")
@@ -51,6 +54,10 @@ def writeVoltage(serial_port: serial, queue: Queue):
     finally:
         stop_event.set()
         ser.close()
+
+def cycleVoltage(queue):
+    for i in range(100):
+        queue.put(i % 5)
 
 if __name__ == '__main__':
     from comport_detection import *
@@ -67,12 +74,16 @@ if __name__ == '__main__':
 
     voltageThread.start()
 
-    for i in range(10):
-        print(i + 2)
-        queue.put(i + 2)
-        time.sleep(1)
+    cycleThread = Thread(
+        target=cycleVoltage,
+        args=(queue,)
+    )
 
-    queue.put("EXIT")
+    cycleThread.start()
+    cycleThread.join()
+
+    #queue.put("EXIT")
+    voltageThread.join()
     queue.join()
     time.sleep(2)
 
