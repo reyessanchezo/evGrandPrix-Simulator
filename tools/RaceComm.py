@@ -15,14 +15,12 @@ def writeVoltage(serial_port: serial, queue: Queue):
     ser = serial.Serial(serial_port, 115200, timeout=0)
 
     # This is a thread to receive signals from the testing Arduino.
-    """
     stop_event = Event()
     respThread = Thread(target=readingSerial,
         args=(ser, stop_event),
         daemon=True
     )
     respThread.start()
-    """
 
     try:
         while True:
@@ -32,15 +30,15 @@ def writeVoltage(serial_port: serial, queue: Queue):
                 continue
             else:
                 if item == "EXIT":
-                    #stop_event.set()
-                    #respThread.join()
+                    stop_event.set()
+                    respThread.join()
                     print("Closing...")
                     queue.task_done()
                     ser.close()
                     break
                 
                 print(f"Processing {item}")
-                ser.write(bytes(str(item), 'utf-8'))
+                ser.write(bytes(str(item)+"\r", 'utf-8'))
                 queue.task_done()
                 time.sleep(0.5)
 
@@ -51,7 +49,7 @@ def writeVoltage(serial_port: serial, queue: Queue):
         print(f"Error: {e}")
 
     finally:
-        #stop_event.set()
+        stop_event.set()
         ser.close()
 
 if __name__ == '__main__':
