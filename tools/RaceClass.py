@@ -86,6 +86,7 @@ def csv_to_raceinfo(directory: str | pathlib.Path) -> RaceInfo:
 #odTranslator changes the odometer for distance traveled on the track to a segment ID for which section its in and also a current distance into the length of that section 
 #Ex.: odTranslator(thisRace, 38) --> distance into track (1.86906398) and the RaceDetail object the tacometer distance is currently driving in
 def odTranslator(thisRace: RaceInfo, tacometer: int | float) -> Tuple[float, RaceDetail]:
+    # From Oscar: the encoder pulses are unsigned long long
     trackPos = tacometer % thisRace.totalLength
     rollingTac = 0
     trackID = 0
@@ -145,8 +146,8 @@ def RPMtoVoltage(rpm):
 
 
 #Read from kart. Must implement later when functionality is available.
-
-def readTac():
+# From Oscar: Tachometer measures RPM. Odometer measures distance
+def readTach():
     """READ Tachometer"""
     return 0
 
@@ -190,8 +191,8 @@ if __name__ == '__main__':
                 #if kart is in turn do turn !
                 outVoltage = None
 
-                #this needs to be set to the actual tacometer value every loop
-                tacometer_curr_distance = readTac()
+                #this needs to be set to the actual tachometer value every loop
+                tacometer_curr_distance = readTach()
                 currSegDistance, raceSeg = odTranslator(thisRace, tacometer_curr_distance)
                 
                 #PID LOOP
@@ -230,7 +231,7 @@ if __name__ == '__main__':
                 outVoltage = None
 
                 #this needs to be set to the actual tacometer value every loop
-                tacometer_curr_distance = readTac()
+                tacometer_curr_distance = readTach()
                 currSegDistance, raceSeg = odTranslator(thisRace, tacometer_curr_distance)
                 
                 #PID LOOP
