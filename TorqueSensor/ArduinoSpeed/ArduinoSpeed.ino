@@ -18,7 +18,7 @@ const float intervalPerMinute = 60000.0 / interval;
 const byte ledPin = 13;
 float rpm = 0.0;
 float analogTorque;
-String digitalTorque;
+String digitalTorque, throttle;
 int actualInterval = 0;
 unsigned long count = 0;
 unsigned long long currentMillis = 0;
@@ -43,6 +43,9 @@ void loop() {
     digitalTorque = rs485Serial.readStringUntil('\r');
     digitalTorque.trim();
   }
+  if (Serial.available() > 0) {
+    throttle = Serial.readString();
+  }
   currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
     noInterrupts(); // Temporarily disable interrupts for accurate count
@@ -57,11 +60,12 @@ void loop() {
     // Calculate values
     analogTorque = ((analogRead(torquePin) * 60.0) / 1023.0) - 30.0;
     rpm = ((float)count * (1000.0/(float)actualInterval) * 60.0) / (float)pulsesPerRevolution;
-    Serial.print("RPM: ");
-    Serial.print(rpm, 2);
-    Serial.print(" \tAnalog Torque(Nm): ");
-    Serial.print(analogTorque, 2);
-    Serial.println(" \tRS485 Torque(Nm): " + digitalTorque);
+    Serial.println(
+      "RPM: " + (String)rpm + 
+      " \tAnalog Torque(Nm): " + analogTorque + 
+      " \tRS485 Torque(Nm): " + digitalTorque +
+      " \tincoming: " + throttle
+    );
   }
   
 }
