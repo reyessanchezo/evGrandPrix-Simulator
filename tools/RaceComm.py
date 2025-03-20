@@ -7,7 +7,7 @@ from queue import Queue, Empty
 def readingSerial(ser, event):
     while not event.is_set():
         if ser.in_waiting > 0:
-            received_data = ser.read(4).decode('utf-8').strip()
+            received_data = ser.readline().decode('utf-8').strip()
             print(f"Arduino says: {str(received_data)}")
 
 # Sends the voltage from the Queue to the Arduino.
@@ -63,7 +63,7 @@ if __name__ == '__main__':
         target=writeVoltage,
         args=(sp, queue),
         daemon=True
-    )
+    )9
 
     voltageThread.start()
 
