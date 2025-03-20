@@ -39,7 +39,7 @@ void setup() {
 }
 
 void loop() {
-  if (rs485Serial.available() > 50) {
+  if (rs485Serial.available() > 0) {
     digitalTorque = rs485Serial.readStringUntil('\r');
     digitalTorque.trim();
   }
