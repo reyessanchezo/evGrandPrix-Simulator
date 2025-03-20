@@ -20,13 +20,13 @@ float rpm = 0.0;
 float analogTorque;
 String digitalTorque, throttle;
 int actualInterval = 0;
-unsigned long count = 0;
+unsigned int count = 0;
 unsigned long long currentMillis = 0;
-unsigned long long totalRevolutions = 0;
+unsigned int totalCount = 0;
 
 void setup() {
   Serial.begin(115200);
-  rs485Serial.begin(19200);
+  rs485Serial.begin(115200);
 
   // Set RS485 module control pin and default to receive mode
   pinMode(DE_RE_PIN, OUTPUT);
@@ -48,11 +48,11 @@ void loop() {
   }
   currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
-    noInterrupts(); // Temporarily disable interrupts for accurate count
+    //noInterrupts(); // Temporarily disable interrupts for accurate count
     count = pulseCount;
     currentMillis = millis();
     pulseCount = 0;
-    interrupts(); // Re-enable interrupts
+    //interrupts(); // Re-enable interrupts
     actualInterval = currentMillis - previousMillis;
     previousMillis = currentMillis;  
     
@@ -64,7 +64,9 @@ void loop() {
       "RPM: " + (String)rpm + 
       " \tAnalog Torque(Nm): " + analogTorque + 
       " \tRS485 Torque(Nm): " + digitalTorque +
-      " \tincoming: " + throttle
+      " \tincoming: " + throttle +
+      " \tpulses: " + (String)totalCount
+
     );
   }
   
@@ -72,6 +74,6 @@ void loop() {
 
 void countPulse() {
   pulseCount++;
-  totalRevolutions++;
+  totalCount++;
   digitalWrite(ledPin, !digitalRead(ledPin));
 }
