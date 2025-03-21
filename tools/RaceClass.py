@@ -126,7 +126,7 @@ def max_braking(motor_speed):
     return (-1 * kartBreakAwayForce) #- chunk2 - chunk3
 
 def brakePossible(curSegDistance, raceinfo, trackID) -> bool:
-    exitrpm = raceinfo.RaceDetials[trackID + 1].maxRPM
+    exitrpm = raceinfo.RaceDetails[trackID + 1].maxRPM
     exitrps = rpm_to_motorspeed(exitrpm)
 
     y1 = velocity(rpm_to_motorspeed(readRPM()))
