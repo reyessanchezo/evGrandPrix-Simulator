@@ -148,7 +148,13 @@ def RPMtoVoltage(rpm):
 
 def readTac():
     """READ Tachometer"""
-    return 0
+    #some how get pulses
+    #60 pulses = 1 rotation
+    motorPulses = 0 #???
+    motorRotations = motorPulses / 60
+    distance = motorRotations * TIRE_DIAMETER * math.pi
+
+    return distance
 
 def readRPM():
     """READ MOTOR RPM"""
