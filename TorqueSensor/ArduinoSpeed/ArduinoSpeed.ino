@@ -44,7 +44,7 @@ void loop() {
     digitalTorque.trim();
   }
   if (Serial.available() > 0) {
-    throttle = Serial.readString();
+    throttle = Serial.readStringUntil('\r');
   }
   currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {

@@ -145,14 +145,16 @@ def RPMtoVoltage(rpm):
 
 
 #Read from kart. Must implement later when functionality is available.
-
+tac = 0
 def readTach():
     """READ Tachometer"""
-    return 0
+    global tac
+    tac += 1000
+    return tac
 
 def readRPM():
     """READ MOTOR RPM"""
-    return 0
+    return 1000
 
 def sendVoltage(voltage):
     """SEND A VOLTAGE"""

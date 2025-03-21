@@ -2,26 +2,29 @@ import serial
 import time
 from threading import Thread, Event
 from queue import Queue, Empty
+from multiprocessing import Process
 
 # Reads for data from Serial.
-def readingSerial(ser, event):
+def readingSerial(ser, event, recq):
     while not event.is_set():
         if ser.in_waiting > 0:
             try:
                 received_data = ser.readline().decode('utf-8').strip()
                 #print(f"{str(received_data)}")
-                print(received_data.split())
+                datfo = list(map(lambda x: x.split()[-1], received_data.split('\t')))
+                #print(datfo)
+                recq.put(datfo)
             except:
                 print("dead packet")
 
 # Sends the voltage from the Queue to the Arduino.
-def writeVoltage(serial_port: serial, queue: Queue):
+def writeVoltage(serial_port: serial, sendQueue: Queue, receiveQueue: Queue):
     ser = serial.Serial(serial_port, 115200, timeout=None)
 
     # This is a thread to receive signals from the testing Arduino.
     stop_event = Event()
     respThread = Thread(target=readingSerial,
-        args=(ser, stop_event),
+        args=(ser, stop_event, receiveQueue),
         daemon=True
     )
     respThread.start()
@@ -29,24 +32,29 @@ def writeVoltage(serial_port: serial, queue: Queue):
     try:
         while True:
             try:
-                item = queue.get()
+                item = sendQueue.get()
             except Empty:
                 continue
+            except KeyboardInterrupt:
+                stop_event.set()
+                respThread.join()
+                print("Closing...")
+                sendQueue.task_done()
+                ser.close()
+                break
             else:
                 if item == "EXIT":
                     stop_event.set()
                     respThread.join()
                     print("Closing...")
-                    queue.task_done()
+                    sendQueue.task_done()
                     ser.close()
                     break
-                
+
                 #print(f"Processing {item}")
                 ser.write(bytes(str(item)+"\r", 'utf-8'))
-                queue.task_done()
-
-    except KeyboardInterrupt as e:
-        print(f"Enter program.")
+                sendQueue.task_done()
+        time.sleep(0.1)
 
     except serial.SerialException as e:
         print(f"Error: {e}")
@@ -55,37 +63,63 @@ def writeVoltage(serial_port: serial, queue: Queue):
         stop_event.set()
         ser.close()
 
-def cycleVoltage(queue):
-    for i in range(100):
-        queue.put(i % 5)
+def mywait(t):
+    time.sleep(t)
 
 if __name__ == '__main__':
     from comport_detection import *
 
-    queue = Queue()
+    sendQueue = Queue()
+    receiveQueue = Queue()
 
     sp = choose_port()
 
     voltageThread = Thread(
         target=writeVoltage,
-        args=(sp, queue),
+        args=(sp, sendQueue, receiveQueue),
         daemon=True
     )
 
     voltageThread.start()
 
-    cycleThread = Thread(
-        target=cycleVoltage,
-        args=(queue,)
-    )
-
-    cycleThread.start()
-    cycleThread.join()
+    time.sleep(3)
+    """
+    for i in range(100):
+        sendQueue.put(i % 5)
+        waitthread = Process(
+            target=mywait,
+            args=(0.1,)
+        )
+        waitthread.start()
+        waitthread.join()
+    """
 
     #queue.put("EXIT")
+
+    i = 0
+    while True:
+        try:
+            item = receiveQueue.get()
+        except Empty:
+            continue
+        except KeyboardInterrupt:
+            print("Ending program.")
+        else:
+            print(item, receiveQueue.qsize())
+            receiveQueue.task_done()
+        
+        i = (i + 1) % 5
+        sendQueue.put(i)
+
+    sendQueue.put(0)
+    waitthread = Process(
+        target=mywait,
+        args=(0.5,)
+    )
+    waitthread.start()
+    waitthread.join()
+    sendQueue.put("EXIT")
     voltageThread.join()
-    queue.join()
-    time.sleep(2)
 
 
 # Arduino Code
