@@ -55,10 +55,10 @@ class RaceInfo:
     def __str__(self):
         ret = []
         for raceDetail in self.RaceDetails:
-            ret.append(f"Length: {raceDetail.length}, Turn Radius: {raceDetail.turnRadius}")
-        ret.append(f"Total length: {self.totalLength}")
-        ret.append(f"Current position total: {self.currPositionTotal}")
-        ret.append(f"Current position on track: {self.currPositionTrack}")
+            ret.append(f"Length: {raceDetail.length:.2f}, Turn Radius: {raceDetail.turnRadius:.2f}")
+        ret.append(f"Total length: {self.totalLength:.2f}")
+        ret.append(f"Current position total: {self.currPositionTotal:.2f}")
+        ret.append(f"Current position on track: {self.currPositionTrack:.2f}")
         return "\n".join(ret)
 
 #this function is used to translate a csv into a filled out race info class also containing race details as an array
@@ -86,7 +86,6 @@ def csv_to_raceinfo(directory: str | pathlib.Path) -> RaceInfo:
 #odTranslator changes the odometer for distance traveled on the track to a segment ID for which section its in and also a current distance into the length of that section 
 #Ex.: odTranslator(thisRace, 38) --> distance into track (1.86906398) and the RaceDetail object the tacometer distance is currently driving in
 def odTranslator(thisRace: RaceInfo, tacometer: int | float) -> Tuple[float, RaceDetail]:
-    # From Oscar: the encoder pulses are unsigned long long
     trackPos = tacometer % thisRace.totalLength
     rollingTac = 0
     trackID = 0
@@ -100,7 +99,7 @@ def odTranslator(thisRace: RaceInfo, tacometer: int | float) -> Tuple[float, Rac
         rollingPos += thisRace.RaceDetails[i].length
     
     segPos = trackPos - rollingPos
-    return segPos, thisRace.RaceDetails[trackID]
+    return segPos, trackID
 
 def rpm_to_motorspeed(rpm):
     rpmNum = rpm
@@ -126,7 +125,7 @@ def max_braking(motor_speed):
     return (-1 * kartBreakAwayForce) #- chunk2 - chunk3
 
 def brakePossible(curSegDistance, raceinfo, trackID) -> bool:
-    exitrpm = raceinfo.RaceDetials[trackID + 1].maxRPM
+    exitrpm = raceinfo.RaceDetails[trackID + 1].maxRPM
     exitrps = rpm_to_motorspeed(exitrpm)
 
     y1 = velocity(rpm_to_motorspeed(readRPM()))
@@ -146,16 +145,10 @@ def RPMtoVoltage(rpm):
 
 
 #Read from kart. Must implement later when functionality is available.
-# From Oscar: Tachometer measures RPM. Odometer measures distance
+
 def readTach():
     """READ Tachometer"""
-    #some how get pulses
-    #60 pulses = 1 rotation
-    motorPulses = 0 #???
-    motorRotations = motorPulses / 60
-    distance = motorRotations * TIRE_DIAMETER * math.pi
-
-    return distance
+    return 0
 
 def readRPM():
     """READ MOTOR RPM"""
@@ -197,7 +190,7 @@ if __name__ == '__main__':
                 #if kart is in turn do turn !
                 outVoltage = None
 
-                #this needs to be set to the actual tachometer value every loop
+                #this needs to be set to the actual tacometer value every loop
                 tacometer_curr_distance = readTach()
                 currSegDistance, raceSeg = odTranslator(thisRace, tacometer_curr_distance)
                 
