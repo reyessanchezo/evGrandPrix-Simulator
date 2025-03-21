@@ -46,7 +46,7 @@ void loop() {
     digitalTorque.trim();
   }
   if (Serial.available() > 0) {
-    throttle = Serial.readString();
+    throttle = Serial.readStringUntil('\r');
     double throttleVal = map(throttle.toDouble(), 0, 5, 0, 255);
     analogWrite(throttlePin, throttleVal);
   }
