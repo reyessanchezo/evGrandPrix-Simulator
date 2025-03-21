@@ -15,7 +15,7 @@ def readingSerial(ser, event, recq):
                 #print(datfo)
                 recq.put(datfo)
             except:
-                print("dead packet")
+                pass
 
 # Sends the voltage from the Queue to the Arduino.
 def writeVoltage(serial_port: serial, sendQueue: Queue, receiveQueue: Queue):
@@ -104,12 +104,13 @@ if __name__ == '__main__':
             continue
         except KeyboardInterrupt:
             print("Ending program.")
+            break
         else:
-            print(item, receiveQueue.qsize())
+            print(f"RPM: {item[0]}\tTotal Pulses: {item[4]}\tV: {item[3]}")
             receiveQueue.task_done()
         
-        i = (i + 1) % 5
-        sendQueue.put(i)
+        #i = (i + 0.01) % 2
+        sendQueue.put(2.2)
 
     sendQueue.put(0)
     waitthread = Process(
