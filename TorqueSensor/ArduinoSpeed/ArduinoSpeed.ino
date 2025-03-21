@@ -10,6 +10,7 @@ SoftwareSerial rs485Serial(RX_PIN, TX_PIN);
 // Analog measurement constants
 const byte encoderPin = 3;       // Encoder output connected to digital pin 3
 const byte torquePin = A4;       // Torque output connected to Analog pin 4
+const int throttlePin = 6;
 volatile unsigned long pulseCount = 0;
 unsigned long previousMillis = 0;
 const float interval = 50.0; // Output interval (milliseconds)
@@ -35,6 +36,7 @@ void setup() {
   pinMode(encoderPin, INPUT_PULLUP);
   pinMode(torquePin, INPUT);
   pinMode(ledPin, OUTPUT);
+  pinMode(throttlePin, OUTPUT);
   attachInterrupt(digitalPinToInterrupt(encoderPin), countPulse, RISING);
 }
 
@@ -44,7 +46,9 @@ void loop() {
     digitalTorque.trim();
   }
   if (Serial.available() > 0) {
-    throttle = Serial.readString();
+    throttle = Serial.readStringUntil('\r');
+    double throttleVal = map(throttle.toDouble(), 0, 5, 0, 255);
+    analogWrite(throttlePin, throttleVal);
   }
   currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {

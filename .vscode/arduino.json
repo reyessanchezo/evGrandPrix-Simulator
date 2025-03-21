@@ -3,5 +3,5 @@
     "board": "arduino:avr:nano",
     "programmer": "arduinoisp",
     "sketch": "TorqueSensor\\ArduinoSpeed\\ArduinoSpeed.ino",
-    "port": "COM11"
+    "port": "COM8"
 }
