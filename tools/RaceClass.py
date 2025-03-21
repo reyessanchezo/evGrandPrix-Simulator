@@ -193,6 +193,7 @@ if __name__ == '__main__':
             start = tm.time()
             if detail.turnRadius < 0:
                 #if kart in straight away do a straight away !
+                print("KART IN STRAIGHT AWAY")
                 #probaby start separate thread
                 #if kart is in turn do turn !
                 outVoltage = None
@@ -227,6 +228,7 @@ if __name__ == '__main__':
                         pid.setpoint = 0
 
                     outVoltage = object.current
+                    print(f'Out Voltage For Straight Away: {outVoltage}')
                     sendVoltage(outVoltage)
 
                     lastTime = tm.time()
@@ -234,6 +236,7 @@ if __name__ == '__main__':
 
             elif detail.turnRadius > 0:
                 #if kart is in turn do turn !
+                print("KART IN TURN")
                 outVoltage = None
 
                 #this needs to be set to the actual tacometer value every loop
@@ -262,7 +265,8 @@ if __name__ == '__main__':
                     power = pid(currentVoltage)
                     currentVoltage = object.update(power, dt)
 
-                    sendVoltage(outVoltage)
+                    print(f'Out Voltage For Turn: {currentVoltage}')
+                    sendVoltage(currentVoltage)
 
                     lastTime = tm.time()
                     tm.sleep(abs(0.1 - (lastTime - currentTme)))
