@@ -5,8 +5,14 @@ import time as tm
 import tqdm
 from simple_pid import PID
 
+from tools import readingSerial, writeVoltage
+from threading import Thread, Event
+from queue import Queue, Empty
+from tools import choose_port
+import time
+
 STATICFRICTION = 2.480847866
-NUM_LAPS = 50
+NUM_LAPS = 1
 POLLING_RATE = 0.1
 
 AIR_DENSITY = 1.2  # Air density (kg/m^3)
@@ -15,52 +21,51 @@ GRAV_ACCELLERATION = 9.8  # Gravity acceleration constant (m/s^2)
 GEARING_RATIO = 13.0 / 55.0  # Gearing Ratio (Tire revolutions / Motor revolutions)
 MASS = 100.0  # Kart mass (kg)
 MAX_CROSSSECTIONAL_AREA = 0.5  # Maximum cross-sectional area (m^2)
-TIRE_DIAMETER = 0.3  # Kart tire diameter (m)
+TIRE_DIAMETER = 0.254  # Kart tire diameter (m)
 TIRE_PRESSURE = 2.0  # Tire pressure (barr)
 TRANSMISSION_EFFICIENCY = 0.9  # Need clarification!!!
 ROLLING_RESISTANCE = 1.0  # Nm. Need clarification!!!
 
 MOTORTORQUE = 3.7 * 3  ##Nm
-#Race detail is a section made to designate a portion of the track
-#This class contains a length of the section, a turn radius (if not a race then -1), and if its a turn what the max speed is.
-class RaceDetail:
+
+class RaceSeg:
     def __init__(self, length, turnRadius=-1):
         self.length = abs(length)
         self.turnRadius = turnRadius
         if turnRadius > 0:
             self.calcMaxSpeed(turnRadius)
+        else:
+            self.maxSpeed = 4500 * (1 / 60) * (1 / (TIRE_DIAMETER * math.pi))
+            self.maxRPM = 4500
         
     def calcMaxSpeed(self, turnRadius):
         self.maxSpeed = math.sqrt(STATICFRICTION * GRAV_ACCELLERATION * turnRadius)
         self.maxRPM = self.maxSpeed / (math.pi * TIRE_DIAMETER * GEARING_RATIO) * 60
 
-# The class that contains information pertaining to the entire track. 
-# This includes the segments of the track, total length, and positional data.
-# Also tells us if the track loops.
 class RaceInfo:
-    def __init__(self, RaceDetails, isLoop=True):
-        self.RaceDetails = RaceDetails
+    def __init__(self, RaceArray, isLoop=True):
+        self.RaceArray = RaceArray
         self.isLoop = isLoop
         self.calcTotalLength()
         self.currPositionTotal = 0
         self.currPositionTrack = 0
     
     def calcTotalLength(self):
-        #self.totalLength = sum(self.RaceDetails) #causes issues "TypeError: unsupported operand type(s) for +: 'int' and 'RaceDetail'"
+        #self.totalLength = sum(self.RaceSeg) #causes issues "TypeError: unsupported operand type(s) for +: 'int' and 'RaceDetail'"
         self.totalLength = 0
-        for RaceDetail in self.RaceDetails:
-            self.totalLength += RaceDetail.length
+        for RaceSeg in self.RaceArray:
+            self.totalLength += RaceSeg.length
 
 
     def __str__(self):
         ret = []
-        for raceDetail in self.RaceDetails:
-            ret.append(f"Length: {raceDetail.length}, Turn Radius: {raceDetail.turnRadius}")
+        for RaceSeg in self.RaceArray:
+            ret.append(f"Length: {RaceSeg.length}, Turn Radius: {RaceSeg.turnRadius}")
         ret.append(f"Total length: {self.totalLength}")
         ret.append(f"Current position total: {self.currPositionTotal}")
         ret.append(f"Current position on track: {self.currPositionTrack}")
         return "\n".join(ret)
-
+    
 #this function is used to translate a csv into a filled out race info class also containing race details as an array
 def csv_to_raceinfo(directory: str | pathlib.Path) -> RaceInfo:
     try:
@@ -73,9 +78,9 @@ def csv_to_raceinfo(directory: str | pathlib.Path) -> RaceInfo:
     try:
         for index, row in data.iterrows():
             if pd.isna(row['Turn Radius']):
-                RaceArray.append(RaceDetail(length=row['Length']))
+                RaceArray.append(RaceSeg(length=row['Length']))
             else:
-                RaceArray.append(RaceDetail(length=row['Length'], turnRadius=row['Turn Radius']))
+                RaceArray.append(RaceSeg(length=row['Length'], turnRadius=row['Turn Radius']))
     except:
         raise ValueError("Race CSV Reading Error -- Try Checking Race CSV Format")
 
@@ -83,24 +88,36 @@ def csv_to_raceinfo(directory: str | pathlib.Path) -> RaceInfo:
     thisRace = RaceInfo(RaceArray)
     return thisRace
 
+G_TACH = 0
+G_TACH_START = 0
+G_RPM = 0
+G_V = 0
+
+#Read from kart. Must implement later when functionality is available.
+# From Oscar: Tachometer measures RPM. Odometer measures distance
+def readTach():
+    """READ Tachometer"""
+    global G_TACH
+    return G_TACH * (1 / 60) * (TIRE_DIAMETER * math.pi * GEARING_RATIO)
+
 #odTranslator changes the odometer for distance traveled on the track to a segment ID for which section its in and also a current distance into the length of that section 
 #Ex.: odTranslator(thisRace, 38) --> distance into track (1.86906398) and the RaceDetail object the tacometer distance is currently driving in
-def odTranslator(thisRace: RaceInfo, tacometer: int | float) -> Tuple[float, RaceDetail]:
+def odTranslator(race: RaceInfo, tacometer: int | float) -> Tuple[float, RaceSeg]:
     # From Oscar: the encoder pulses are unsigned long long
-    trackPos = tacometer % thisRace.totalLength
+    trackPos = tacometer % race.totalLength
     rollingTac = 0
     trackID = 0
     segPos = 0
-    while rollingTac + thisRace.RaceDetails[trackID].length < trackPos:
-        rollingTac += thisRace.RaceDetails[trackID].length
+    while rollingTac + race.RaceArray[trackID].length < trackPos:
+        rollingTac += race.RaceArray[trackID].length
         trackID += 1
     
     rollingPos = 0
     for i in range(trackID):
-        rollingPos += thisRace.RaceDetails[i].length
+        rollingPos += race.RaceArray[i].length
     
     segPos = trackPos - rollingPos
-    return segPos, thisRace.RaceDetails[trackID]
+    return segPos, trackID
 
 def rpm_to_motorspeed(rpm):
     rpmNum = rpm
@@ -126,7 +143,10 @@ def max_braking(motor_speed):
     return (-1 * kartBreakAwayForce) #- chunk2 - chunk3
 
 def brakePossible(curSegDistance, raceinfo, trackID) -> bool:
-    exitrpm = raceinfo.RaceDetails[trackID + 1].maxRPM
+    print(f'INSIDE BRAKE POSSIBLE TRACK ID = {trackID}')
+    if trackID == len(raceInfo.RaceArray):
+        print("WARNING")
+    exitrpm = raceinfo.RaceArray[trackID + 1].maxRPM
     exitrps = rpm_to_motorspeed(exitrpm)
 
     y1 = velocity(rpm_to_motorspeed(readRPM()))
@@ -144,28 +164,43 @@ def num_to_range(num, inMin, inMax, outMin, outMax):
 def RPMtoVoltage(rpm):
     return num_to_range(rpm, 0, 4500, 0.9, 4.1)
 
-
-#Read from kart. Must implement later when functionality is available.
-# From Oscar: Tachometer measures RPM. Odometer measures distance
-def readTach():
-    """READ Tachometer"""
-    #some how get pulses
-    #60 pulses = 1 rotation
-    motorPulses = 0 #???
-    motorRotations = motorPulses / 60
-    distance = motorRotations * TIRE_DIAMETER * math.pi
-
-    return distance
-
 def readRPM():
     """READ MOTOR RPM"""
-    return 0
+    global G_RPM
+    return G_RPM
 
-def sendVoltage(voltage):
+def sendVoltage(voltage, vq):
     """SEND A VOLTAGE"""
-    pass
+    global G_V
+    vq.put(voltage)
+    return
 
-#######
+finished = False
+def update_globals():
+    global finished
+    global G_RPM
+    global G_TACH
+    global G_TACH_START
+    while not finished:
+        try:
+            item = receiveQueue.get()
+        except Empty:
+            continue
+        except KeyboardInterrupt:
+            print("Ending program.")
+            break
+        else:
+            #print(f"RPM: {item[0]}\tTotal Pulses: {item[4]}\tV: {item[3]}")
+            try:
+                if (G_TACH_START == 0):
+                    G_TACH_START = float(item[4])
+                G_RPM = float(item[0])
+                G_TACH = float(item[4]) - G_TACH_START
+                print(f'RPM: {G_RPM}, TACH: {G_TACH}')
+            except Exception as e:
+                print(e)
+                exit()
+            receiveQueue.task_done()
 
 class KartVoltage:
     def __init__(self):
@@ -173,108 +208,144 @@ class KartVoltage:
     
     def update(self, power, dt):
         if power > 0:
-            # PROBLEM LIES HERE
             self.current += 1 * power * dt
         return self.current
-    
+
 if __name__ == '__main__':
-    thisRace = csv_to_raceinfo("raceCSV.csv")
+    raceInfo = csv_to_raceinfo("raceCSV.csv")
     
-    print(thisRace)
+    print(raceInfo)
     #currSegDistance, raceSeg = odTranslator(thisRace, 38)
     print(f'Number of laps: {NUM_LAPS}')
-    print(f'Total Expected time: {POLLING_RATE * len(thisRace.RaceDetails) * NUM_LAPS}, Polling Rate: {POLLING_RATE}')
+    print(f'Total Expected time: {POLLING_RATE * len(raceInfo.RaceArray) * NUM_LAPS}, Polling Rate: {POLLING_RATE}')
 
-    lapCur = 0
+    sendQueue = Queue()
+    receiveQueue = Queue()
+    sp = choose_port()
 
-    totalStart = tm.time()
-    for lap in tqdm.tqdm(range (NUM_LAPS), desc="Running Race...", ascii=True, dynamic_ncols=True):
-        for detail in thisRace.RaceDetails:
-            start = tm.time()
-            if detail.turnRadius < 0:
-                #if kart in straight away do a straight away !
-                print("KART IN STRAIGHT AWAY")
-                #probaby start separate thread
-                #if kart is in turn do turn !
+    updateThread = Thread(
+        target=update_globals,
+        args=(),
+        daemon=True
+    )
+
+    voltageThread = Thread(
+        target=writeVoltage,
+        args=(sp, sendQueue, receiveQueue),
+        daemon=True
+    )
+
+    updateThread.start()
+    voltageThread.start()
+    print("Booting...")
+    time.sleep(5)
+
+    curLap = 0
+    raceStart = tm.time()
+
+    odTestMode = 0
+    if odTestMode == 1:
+        for i in range(1000):
+            tacometer_curr_distance = readTach()
+            currSegDistance, trackID = odTranslator(raceInfo, tacometer_curr_distance)
+            print(f'Race segment: {trackID}, Distance into segment: {currSegDistance}')
+
+    for lap in range(NUM_LAPS):
+        for seg in raceInfo.RaceArray:
+            if seg.turnRadius < 0:
+                #straight away
+                print("Kart in straight away")
+                
                 outVoltage = None
 
-                #this needs to be set to the actual tachometer value every loop
-                tacometer_curr_distance = readTach()
-                currSegDistance, raceSeg = odTranslator(thisRace, tacometer_curr_distance)
-                
-                #PID LOOP
-                object = KartVoltage()
-
+                tacometer_cur_distance = readTach()
+                curSegDistance, origionalTrackID = odTranslator(raceInfo, tacometer_cur_distance)
                 currentRPM = readRPM()
                 currentVoltage = RPMtoVoltage(currentRPM)
+                print(f'Race segment: {origionalTrackID}, Distance into segment: {curSegDistance}')
 
+                object = KartVoltage()
                 goalRPM = 1000000
                 goalVoltage = RPMtoVoltage(goalRPM)
-
                 pid = PID(3, 0.01, 0.1, setpoint=goalVoltage)
                 pid.output_limits = (0, 5)
 
                 startTime = tm.time()
                 lastTime = startTime
-                
-                while detail.length > currSegDistance:
-                    #set pid throttle
+
+                trackID = origionalTrackID
+                print(f'origional track id: {origionalTrackID}')
+                while seg.length > curSegDistance and trackID == origionalTrackID: ###IS THERE A PROBLEM HERE?
+                    tacometer_cur_distance = readTach()
+                    curSegDistance, trackID = odTranslator(raceInfo, tacometer_cur_distance)
+                    print(f'Race segment: {trackID}, Distance into segment: {curSegDistance}')
+                    if trackID != origionalTrackID:
+                        break
+
                     currentTme = tm.time()
                     dt = currentTme - lastTime
                     power = pid(currentVoltage)
                     currentVoltage = object.update(power, dt)
 
-                    if not brakePossible(currSegDistance, thisRace, raceSeg):
+                    if not brakePossible(curSegDistance, raceInfo, trackID):
                         pid.setpoint = 0
 
                     outVoltage = object.current
                     print(f'Out Voltage For Straight Away: {outVoltage}')
-                    sendVoltage(outVoltage)
+                    #print(f'Current position on straight away: {TACTEST}')
+                    #print(f'track id: {trackID}')
+                    sendVoltage(outVoltage, sendQueue)
 
                     lastTime = tm.time()
                     tm.sleep(abs(0.1 - (lastTime - currentTme)))
 
-            elif detail.turnRadius > 0:
-                #if kart is in turn do turn !
-                print("KART IN TURN")
+            elif seg.turnRadius > 0:
+                print(f'Kart is in turn')
+                
                 outVoltage = None
 
-                #this needs to be set to the actual tacometer value every loop
-                tacometer_curr_distance = readTach()
-                currSegDistance, raceSeg = odTranslator(thisRace, tacometer_curr_distance)
-                
-                #PID LOOP
-                object = KartVoltage()
-
+                tacometer_cur_distance = readTach()
+                curSegDistance, origionalTrackID = odTranslator(raceInfo, tacometer_cur_distance)
                 currentRPM = readRPM()
                 currentVoltage = RPMtoVoltage(currentRPM)
+                print(f'Race segment: {origionalTrackID}, Distance into segment: {curSegDistance}')
 
-                goalRPM = detail.maxRPM
+                object = KartVoltage()
+                goalRPM = seg.maxRPM
                 goalVoltage = RPMtoVoltage(goalRPM)
-
                 pid = PID(3, 0.01, 0.1, setpoint=goalVoltage)
                 pid.output_limits = (0, 5)
 
                 startTime = tm.time()
                 lastTime = startTime
-                
-                while detail.length > currSegDistance:
-                    #set pid throttle
+
+                trackID = origionalTrackID
+                while seg.length > curSegDistance and trackID == origionalTrackID:
+                    tacometer_cur_distance = readTach()
+                    curSegDistance, trackID = odTranslator(raceInfo, tacometer_cur_distance)
+                    print(f'Race segment: {trackID}, Distance into segment: {curSegDistance}')
+                    if trackID != origionalTrackID:
+                        break
+
                     currentTme = tm.time()
                     dt = currentTme - lastTime
                     power = pid(currentVoltage)
                     currentVoltage = object.update(power, dt)
 
                     print(f'Out Voltage For Turn: {currentVoltage}')
-                    sendVoltage(currentVoltage)
+                    #print(f'Current position on turn: {TACTEST}')
+                    sendVoltage(currentVoltage, sendQueue)
 
                     lastTime = tm.time()
                     tm.sleep(abs(0.1 - (lastTime - currentTme)))
-
             else:
                 raise ValueError("Race turn radius cannot be 0")
-            
-        lapCur += 1
-        #print(f'Current Lap: {lapCur}')
-    totalEnd = tm.time()
-    print(f'Total execution time: {totalEnd - totalStart}')
+
+        curLap += 1
+        print(f'Current lap: {curLap}')
+
+    raceEnd = tm.time()
+    print(f'Total execution time: {raceEnd - raceStart}')
+
+    #close threads
+    finished = True
