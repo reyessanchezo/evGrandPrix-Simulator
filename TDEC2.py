@@ -11,9 +11,9 @@ from queue import Queue, Empty
 from tools import choose_port
 import time
 
-STATICFRICTIONSIDELOADING = 1.8 
+STATICFRICTIONSIDELOADING = 0.8 
 STATICFRICTION = 0.8 #2.480847866
-NUM_LAPS = 1
+NUM_LAPS = 3
 POLLING_RATE = 0.1
 
 AIR_DENSITY = 1.2  # Air density (kg/m^3)
@@ -163,7 +163,7 @@ def num_to_range(num, inMin, inMax, outMin, outMax):
   return outMin + (float(num - inMin) / float(inMax - inMin) * (outMax - outMin))
 
 def RPMtoVoltage(rpm):
-    return num_to_range(rpm, 0, 4500, 0.9, 4.1)
+    return num_to_range(rpm, 0, 4500, 0.0, 5)
 
 def readRPM():
     """READ MOTOR RPM"""
@@ -262,11 +262,11 @@ if __name__ == '__main__':
             currSegDistance, trackID = odTranslator(raceInfo, tacometer_curr_distance)
             print(f'Race segment: {trackID}, Distance into segment: {currSegDistance}')
 
-    for lap in range(NUM_LAPS):
-        for seg in raceInfo.RaceArray:
+    for lap in tqdm.tqdm(range(NUM_LAPS), desc="Race Progress...", ascii=True, dynamic_ncols=True):
+        for seg in tqdm.tqdm(raceInfo.RaceArray, desc="Lap Progress...", ascii=True, dynamic_ncols=True):
             if seg.turnRadius < 0:
                 #straight away
-                print("Kart in straight away")
+                tqdm.tqdm.write("Kart in straight away")
                 
                 outVoltage = None
 
@@ -274,7 +274,7 @@ if __name__ == '__main__':
                 curSegDistance, origionalTrackID = odTranslator(raceInfo, tacometer_cur_distance)
                 currentRPM = readRPM()
                 currentVoltage = RPMtoVoltage(currentRPM)
-                print(f'Race segment: {origionalTrackID}, Distance into segment: {curSegDistance}')
+                tqdm.tqdm.write(f'Race segment: {origionalTrackID}, Distance into segment: {curSegDistance}')
 
                 object = KartVoltage()
                 goalRPM = 1000000
@@ -286,11 +286,12 @@ if __name__ == '__main__':
                 lastTime = startTime
 
                 trackID = origionalTrackID
-                print(f'origional track id: {origionalTrackID}')
+                tqdm.tqdm.write(f'origional track id: {origionalTrackID}')
                 while seg.length > curSegDistance and trackID == origionalTrackID: ###IS THERE A PROBLEM HERE?
                     tacometer_cur_distance = readTach()
                     curSegDistance, trackID = odTranslator(raceInfo, tacometer_cur_distance)
-                    print(f'(FULL THROTTLE), Race segment: {trackID}, Distance into segment: {curSegDistance}')
+                    #print(f'(FULL THROTTLE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {curSegDistance}')
+                    tqdm.tqdm.write(f'(FULL THROTTLE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {curSegDistance}')
                     if trackID != origionalTrackID:
                         break
 
@@ -312,7 +313,8 @@ if __name__ == '__main__':
                     tm.sleep(abs(0.1 - (lastTime - currentTme)))
 
             elif seg.turnRadius > 0:
-                print(f'Kart is in turn')
+                #print(f'Kart is in turn')
+                tqdm.tqdm.write(f'Kart is in turn')
                 
                 outVoltage = None
 
@@ -320,7 +322,7 @@ if __name__ == '__main__':
                 curSegDistance, origionalTrackID = odTranslator(raceInfo, tacometer_cur_distance)
                 currentRPM = readRPM()
                 currentVoltage = RPMtoVoltage(currentRPM)
-                print(f'Race segment: {origionalTrackID}, Distance into segment: {curSegDistance}')
+                tqdm.tqdm.write(f'Race segment: {origionalTrackID}, Distance into segment: {curSegDistance}')
 
                 object = KartVoltage()
                 goalRPM = seg.maxRPM
@@ -335,7 +337,8 @@ if __name__ == '__main__':
                 while seg.length > curSegDistance and trackID == origionalTrackID:
                     tacometer_cur_distance = readTach()
                     curSegDistance, trackID = odTranslator(raceInfo, tacometer_cur_distance)
-                    print(f'THROTTLE: {currentVoltage * 20}%, Race segment: {trackID}, Distance into segment: {curSegDistance}')
+                    #print(f'THROTTLE: {currentVoltage * 20}%, Race segment: {trackID}, Distance into segment: {curSegDistance}')
+                    tqdm.tqdm.write(f'THROTTLE: {num_to_range(currentVoltage, 0, 5, 0, 100)}%, Race instructions: Turn, Race segment: {trackID}, Distance into segment: {curSegDistance}, Expected RPM: {seg.maxRPM}')
                     if trackID != origionalTrackID:
                         break
 
