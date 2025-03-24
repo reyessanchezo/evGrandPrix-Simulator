@@ -179,6 +179,9 @@ def sendVoltage(voltage, vq):
     # For TDEC2, we are keeping below 2V due a concern over ratings that needs to be checked.
 
     voltage = clamp(voltage, 0, 2)
+    
+    # Printing instructions for the driver until we attach a throttle.
+    print(f"THROTTLE: {voltage * 20}%")
     vq.put(voltage)
     return
 
@@ -203,7 +206,7 @@ def update_globals():
                     G_TACH_START = float(item[4])
                 G_RPM = float(item[0])
                 G_TACH = float(item[4]) - G_TACH_START
-                print(f'ARDUINO: (RPM: {G_RPM}, TACH: {G_TACH})')
+                #print(f'ARDUINO: (RPM: {G_RPM}, TACH: {G_TACH})')
             except Exception as e:
                 print(e)
                 exit()
