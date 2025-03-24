@@ -143,7 +143,7 @@ def max_braking(motor_speed):
     return (-1 * kartBreakAwayForce) #- chunk2 - chunk3
 
 def brakePossible(curSegDistance, raceinfo, trackID) -> bool:
-    print(f'INSIDE BRAKE POSSIBLE TRACK ID = {trackID}')
+    #print(f'INSIDE BRAKE POSSIBLE TRACK ID = {trackID}')
     if trackID == len(raceInfo.RaceArray):
         print("WARNING")
     exitrpm = raceinfo.RaceArray[trackID + 1].maxRPM
@@ -181,7 +181,7 @@ def sendVoltage(voltage, vq):
     voltage = clamp(voltage, 0, 2)
     
     # Printing instructions for the driver until we attach a throttle.
-    print(f"THROTTLE: {voltage * 20}%")
+    #print(f"THROTTLE: {voltage * 20}%")
     vq.put(voltage)
     return
 
@@ -247,8 +247,9 @@ if __name__ == '__main__':
 
     updateThread.start()
     voltageThread.start()
-    print("Booting...")
-    time.sleep(5)
+    # This was added to make sure the Arduino is on during testing. May not be required anymore.
+    print("Please wait a moment...")
+    time.sleep(2)
 
     curLap = 0
     raceStart = tm.time()
@@ -288,7 +289,7 @@ if __name__ == '__main__':
                 while seg.length > curSegDistance and trackID == origionalTrackID: ###IS THERE A PROBLEM HERE?
                     tacometer_cur_distance = readTach()
                     curSegDistance, trackID = odTranslator(raceInfo, tacometer_cur_distance)
-                    print(f'Race segment: {trackID}, Distance into segment: {curSegDistance}')
+                    print(f'(FULL THROTTLE), Race segment: {trackID}, Distance into segment: {curSegDistance}')
                     if trackID != origionalTrackID:
                         break
 
@@ -301,7 +302,7 @@ if __name__ == '__main__':
                         pid.setpoint = 0
 
                     outVoltage = object.current
-                    print(f'Out Voltage For Straight Away: {outVoltage}')
+                    #print(f'Out Voltage For Straight Away: {outVoltage}')
                     #print(f'Current position on straight away: {TACTEST}')
                     #print(f'track id: {trackID}')
                     sendVoltage(outVoltage, sendQueue)
@@ -333,7 +334,7 @@ if __name__ == '__main__':
                 while seg.length > curSegDistance and trackID == origionalTrackID:
                     tacometer_cur_distance = readTach()
                     curSegDistance, trackID = odTranslator(raceInfo, tacometer_cur_distance)
-                    print(f'Race segment: {trackID}, Distance into segment: {curSegDistance}')
+                    print(f'THROTTLE: {currentVoltage * 20}%, Race segment: {trackID}, Distance into segment: {curSegDistance}')
                     if trackID != origionalTrackID:
                         break
 
@@ -342,7 +343,7 @@ if __name__ == '__main__':
                     power = pid(currentVoltage)
                     currentVoltage = object.update(power, dt)
 
-                    print(f'Out Voltage For Turn: {currentVoltage}')
+                    #print(f'Out Voltage For Turn: {currentVoltage}')
                     #print(f'Current position on turn: {TACTEST}')
                     sendVoltage(currentVoltage, sendQueue)
 
