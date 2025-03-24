@@ -169,9 +169,16 @@ def readRPM():
     global G_RPM
     return G_RPM
 
+def clamp(val, minVal, maxVal):
+    return max(minVal, min(val, maxVal))
+
 def sendVoltage(voltage, vq):
     """SEND A VOLTAGE"""
     global G_V
+    
+    # For TDEC2, we are keeping below 2V due a concern over ratings that needs to be checked.
+
+    voltage = clamp(voltage, 0, 2)
     vq.put(voltage)
     return
 
