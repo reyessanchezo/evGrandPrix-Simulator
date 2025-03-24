@@ -203,7 +203,7 @@ def update_globals():
                     G_TACH_START = float(item[4])
                 G_RPM = float(item[0])
                 G_TACH = float(item[4]) - G_TACH_START
-                print(f'RPM: {G_RPM}, TACH: {G_TACH}')
+                print(f'ARDUINO: (RPM: {G_RPM}, TACH: {G_TACH})')
             except Exception as e:
                 print(e)
                 exit()
@@ -219,7 +219,7 @@ class KartVoltage:
         return self.current
 
 if __name__ == '__main__':
-    raceInfo = csv_to_raceinfo("raceCSV.csv")
+    raceInfo = csv_to_raceinfo("tdec_track.csv")
     
     print(raceInfo)
     #currSegDistance, raceSeg = odTranslator(thisRace, 38)
