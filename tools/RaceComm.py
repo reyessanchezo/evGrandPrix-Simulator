@@ -11,7 +11,7 @@ def readingSerial(ser, event, recq):
             try:
                 received_data = ser.readline().decode('utf-8').strip()
                 #print(f"{str(received_data)}")
-                datfo = list(map(lambda x: x.split()[-1], received_data.split('\t')))
+                datfo = list(map(lambda x: x, received_data.split('\t')))
                 #print(datfo)
                 recq.put(datfo)
             except:
@@ -54,7 +54,6 @@ def writeVoltage(serial_port: serial, sendQueue: Queue, receiveQueue: Queue):
                 #print(f"Processing {item}")
                 ser.write(bytes(str(item)+"\r", 'utf-8'))
                 sendQueue.task_done()
-        time.sleep(0.1)
 
     except serial.SerialException as e:
         print(f"Error: {e}")
