@@ -64,14 +64,12 @@ void loop() {
     // Calculate values
     analogTorque = ((analogRead(torquePin) * 60.0) / 1023.0) - 30.0;
     rpm = ((float)count * (1000.0/(float)actualInterval) * 60.0) / (float)pulsesPerRevolution;
-    Serial.println(
-      "RPM: " + (String)rpm + 
-      " \tAnalog Torque(Nm): " + analogTorque + 
-      " \tRS485 Torque(Nm): " + digitalTorque +
-      " \tincoming: " + throttle +
-      " \tpulses: " + (String)totalCount
-
+    Serial.print(
+      (String)rpm + 
+      "\t" + (String)totalCount 
+      //"\t" + digitalTorque
     );
+    Serial.println();
   }
   
 }
