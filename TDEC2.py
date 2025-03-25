@@ -11,8 +11,8 @@ from queue import Queue, Empty
 from tools import choose_port
 import time
 
-STATICFRICTIONSIDELOADING = 0.8 
-STATICFRICTION = 0.8 #2.480847866
+STATICFRICTIONSIDELOADING = 0.4
+STATICFRICTION = 0.4 #2.480847866
 NUM_LAPS = 3
 POLLING_RATE = 0.1
 
@@ -203,13 +203,12 @@ def update_globals():
             #print(f"RPM: {item[0]}\tTotal Pulses: {item[4]}\tV: {item[3]}")
             try:
                 if (G_TACH_START == 0):
-                    G_TACH_START = float(item[4])
+                    G_TACH_START = float(item[1])
                 G_RPM = float(item[0])
-                G_TACH = float(item[4]) - G_TACH_START
+                G_TACH = float(item[1]) - G_TACH_START
                 #print(f'ARDUINO: (RPM: {G_RPM}, TACH: {G_TACH})')
             except Exception as e:
-                print(e)
-                exit()
+                print("By some miracel this worked but it shoudlnt have")
             receiveQueue.task_done()
 
 class KartVoltage:
@@ -282,7 +281,7 @@ if __name__ == '__main__':
 
                 startTime = tm.time()
                 lastTime = startTime
-
+                brakePossibleBool = True
                 trackID = origionalTrackID
                 tqdm.tqdm.write(f'origional track id: {origionalTrackID}')
                 while seg.length > curSegDistance and trackID == origionalTrackID:
@@ -297,8 +296,7 @@ if __name__ == '__main__':
                     dt = currentTme - lastTime
                     power = pid(currentVoltage)
                     currentVoltage = object.update(power, dt)
-
-                    brakePossibleBool = True
+                    
                     if brakePossibleBool is True:
                         tqdm.tqdm.write(f'(FULL THROTTLE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {curSegDistance}')
                     elif brakePossibleBool is not True:
