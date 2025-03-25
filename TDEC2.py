@@ -157,7 +157,6 @@ def brakePossible(curSegDistance, raceinfo, trackID) -> bool:
     distance = ( (y2)**2 - (y1)**2 )/(2 * max_braking(0))
 
     return curSegDistance > distance
-    #STILL WORK IN PROGRESS
 
 def num_to_range(num, inMin, inMax, outMin, outMax):
   return outMin + (float(num - inMin) / float(inMax - inMin) * (outMax - outMin))
@@ -226,7 +225,6 @@ if __name__ == '__main__':
     raceInfo = csv_to_raceinfo("tdec_track.csv")
     
     print(raceInfo)
-    #currSegDistance, raceSeg = odTranslator(thisRace, 38)
     print(f'Number of laps: {NUM_LAPS}')
     print(f'Total Expected time: {POLLING_RATE * len(raceInfo.RaceArray) * NUM_LAPS}, Polling Rate: {POLLING_RATE}')
 
@@ -287,11 +285,11 @@ if __name__ == '__main__':
 
                 trackID = origionalTrackID
                 tqdm.tqdm.write(f'origional track id: {origionalTrackID}')
-                while seg.length > curSegDistance and trackID == origionalTrackID: ###IS THERE A PROBLEM HERE?
+                while seg.length > curSegDistance and trackID == origionalTrackID:
                     tacometer_cur_distance = readTach()
                     curSegDistance, trackID = odTranslator(raceInfo, tacometer_cur_distance)
                     #print(f'(FULL THROTTLE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {curSegDistance}')
-                    tqdm.tqdm.write(f'(FULL THROTTLE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {curSegDistance}')
+                    
                     if trackID != origionalTrackID:
                         break
 
@@ -300,13 +298,18 @@ if __name__ == '__main__':
                     power = pid(currentVoltage)
                     currentVoltage = object.update(power, dt)
 
+                    brakePossibleBool = True
+                    if brakePossibleBool is True:
+                        tqdm.tqdm.write(f'(FULL THROTTLE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {curSegDistance}')
+                    elif brakePossibleBool is not True:
+                        tqdm.tqdm.write(f'(FULL BRAKE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {curSegDistance}')
+                    
                     if not brakePossible(curSegDistance, raceInfo, trackID):
                         pid.setpoint = 0
+                        brakePossibleBool = False
 
                     outVoltage = object.current
                     #print(f'Out Voltage For Straight Away: {outVoltage}')
-                    #print(f'Current position on straight away: {TACTEST}')
-                    #print(f'track id: {trackID}')
                     sendVoltage(outVoltage, sendQueue)
 
                     lastTime = tm.time()
@@ -357,7 +360,7 @@ if __name__ == '__main__':
                 raise ValueError("Race turn radius cannot be 0")
 
         curLap += 1
-        print(f'Current lap: {curLap}')
+        tqdm.tqdm.write(f'Current lap: {curLap}')
 
     raceEnd = tm.time()
     print(f'Total execution time: {raceEnd - raceStart}')
