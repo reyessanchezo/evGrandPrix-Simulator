@@ -208,8 +208,31 @@ def update_globals():
                 G_TACH = float(item[1]) - G_TACH_START
                 #print(f'ARDUINO: (RPM: {G_RPM}, TACH: {G_TACH})')
             except Exception as e:
-                print("By some miracel this worked but it shoudlnt have")
+                print("By some miracle this worked but it shoudln't have")
             receiveQueue.task_done()
+
+def tqdmDistanceConverter(currDistance, totalDistance) -> int:
+    return int(math.ceil(num_to_range(currDistance, 0, totalDistance, 0, 100)))
+
+def tqdmDistanceLoop(raceLength) -> None:
+    global NUM_LAPS
+    odometer = readTach()
+    odTrack = odometer % raceLength
+    
+    pbarLapDistance = tqdm(range(100), desc="Progress in lap...", ascii=True, dynamic_ncols=True)
+    pbarTotalDistance = tqdm(range(100), desc="Total progress in race...", ascii=True, dynamic_ncols=True)
+    
+    while odometer < raceLength * NUM_LAPS:
+        pbarLapDistance.n = tqdmDistanceConverter(odTrack, raceLength)
+        pbarTotalDistance.n = tqdmDistanceConverter(odometer, (raceLength * NUM_LAPS))
+        pbarLapDistance.refresh()
+        pbarTotalDistance.refresh()
+        
+        odometer = readTach()
+        odTrack = odometer % raceLength
+        
+        time.sleep(0.1)
+        
 
 class KartVoltage:
     def __init__(self):
@@ -242,13 +265,21 @@ if __name__ == '__main__':
         args=(sp, sendQueue, receiveQueue),
         daemon=True
     )
+    
+    tqdmDistanceThread = Thread(
+        target=tqdmDistanceLoop,
+        args=(raceInfo.totalLength),
+        daemon=False ##it does not work if it is a daemon, but it naturally stops when the program ends. unsure if this is a problem
+    )
 
     updateThread.start()
     voltageThread.start()
+    tqdmDistanceThread.start()
     # This was added to make sure the Arduino is on during testing. May not be required anymore.
     print("Please wait a moment...")
     time.sleep(2)
 
+    
     curLap = 0
     raceStart = tm.time()
 
@@ -259,8 +290,8 @@ if __name__ == '__main__':
             currSegDistance, trackID = odTranslator(raceInfo, tacometer_curr_distance)
             print(f'Race segment: {trackID}, Distance into segment: {currSegDistance}')
 
-    for lap in tqdm.tqdm(range(NUM_LAPS), desc="Race Progress...", ascii=True, dynamic_ncols=True):
-        for seg in tqdm.tqdm(raceInfo.RaceArray, desc="Lap Progress...", ascii=True, dynamic_ncols=True):
+    for lap in range(NUM_LAPS):
+        for seg in raceInfo.RaceArray:
             if seg.turnRadius < 0:
                 #straight away
                 tqdm.tqdm.write("Kart in straight away")
