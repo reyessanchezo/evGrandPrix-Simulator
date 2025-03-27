@@ -10,24 +10,33 @@ SoftwareSerial rs485Serial(RX_PIN, TX_PIN);
 // Analog measurement constants
 const byte encoderPin = 3;       // Encoder output connected to digital pin 3
 const byte torquePin = A4;       // Torque output connected to Analog pin 4
-const int throttlePin = 6;
+const byte ledPin = 13;
+const byte throttlePin = 6;
+
+// Timing
 volatile unsigned long pulseCount = 0;
 unsigned long previousMillis = 0;
 const float interval = 50.0; // Output interval (milliseconds)
-const float pulsesPerRevolution = 60.0;
+const int pulsesPerRevolution = 60;
 const float intervalPerMinute = 60000.0 / interval;
-const byte ledPin = 13;
-float rpm = 0.0;
+
+// variables
+int rpm = 0;
 float analogTorque;
-String digitalTorque, throttle;
+String digitalTorque;
 int actualInterval = 0;
 unsigned int count = 0;
 unsigned long long currentMillis = 0;
 unsigned int totalCount = 0;
+unsigned long SerialLastRead = 0;
+double throttleVal = 0;
 
 void setup() {
   Serial.begin(115200);
-  rs485Serial.begin(115200);
+  rs485Serial.begin(19200);
+
+  Serial.setTimeout(50);
+  rs485Serial.setTimeout(10);
 
   // Set RS485 module control pin and default to receive mode
   pinMode(DE_RE_PIN, OUTPUT);
@@ -41,35 +50,41 @@ void setup() {
 }
 
 void loop() {
+  currentMillis = millis();
+
   if (rs485Serial.available() > 0) {
     digitalTorque = rs485Serial.readStringUntil('\r');
-    digitalTorque.trim();
   }
   if (Serial.available() > 0) {
-    throttle = Serial.readStringUntil('\r');
-    double throttleVal = map(throttle.toDouble(), 0, 5, 0, 255);
+    String temp = Serial.readStringUntil('\r');
+    throttleVal = map(constrain(temp.toDouble(), 0, 5), 0, 5, 0, 255);
+    analogWrite(throttlePin, throttleVal);
+    SerialLastRead = millis();
+  }
+
+  // Throttle timeout
+  // At the end of a simulation, stop the motor
+  if ( (millis() - SerialLastRead) > 1000 ) {
+    throttleVal = 0;
     analogWrite(throttlePin, throttleVal);
   }
-  currentMillis = millis();
+  
+  
   if (currentMillis - previousMillis >= interval) {
-    //noInterrupts(); // Temporarily disable interrupts for accurate count
+    noInterrupts(); // Temporarily disable interrupts for accurate count
     count = pulseCount;
     currentMillis = millis();
     pulseCount = 0;
-    //interrupts(); // Re-enable interrupts
+    interrupts(); // Re-enable interrupts
     actualInterval = currentMillis - previousMillis;
     previousMillis = currentMillis;  
-    
-    
-    // Calculate values
-    analogTorque = ((analogRead(torquePin) * 60.0) / 1023.0) - 30.0;
-    rpm = ((float)count * (1000.0/(float)actualInterval) * 60.0) / (float)pulsesPerRevolution;
-    Serial.print(
+    rpm = (count * (1000/actualInterval) * 60) / pulsesPerRevolution;
+
+    Serial.println(
       (String)rpm + 
-      "\t" + (String)totalCount 
-      //"\t" + digitalTorque
+      "\t" + (String)totalCount +
+      "\t" + digitalTorque + "\t" + (String)SerialLastRead + "\t" + (String)throttleVal
     );
-    Serial.println();
   }
   
 }
