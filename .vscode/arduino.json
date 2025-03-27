@@ -2,6 +2,6 @@
     "configuration": "cpu=atmega328",
     "board": "arduino:avr:nano",
     "programmer": "arduinoisp",
-    "sketch": "TorqueSensor\\ArduinoSpeed\\ArduinoSpeed.ino",
+    "sketch": "TorqueSensor\\ArduinoMain\\ArduinoMain.ino",
     "port": "COM11"
 }
