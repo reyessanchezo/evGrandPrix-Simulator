@@ -216,21 +216,40 @@ def tqdmDistanceConverter(currDistance, totalDistance) -> int:
 
 def tqdmDistanceLoop(raceLength) -> None:
     global NUM_LAPS
+    timeoutHours = 5 # in hours
+    timeoutSeconds = timeoutHours * 60 * 60
+    
     odometer = readTach()
     odTrack = odometer % raceLength
+    lapNum = 1
     
-    pbarLapDistance = tqdm(range(100), desc="Progress in lap...", ascii=True, dynamic_ncols=True)
-    pbarTotalDistance = tqdm(range(100), desc="Total progress in race...", ascii=True, dynamic_ncols=True)
+    timstart = tm.time()
+    curTime = timstart
     
-    while odometer < raceLength * NUM_LAPS:
+    pbarLapDistance = tqdm(range(100), 
+                           desc="Progress in lap", 
+                           ascii=' █', 
+                           dynamic_ncols=True, 
+                           bar_format='{desc:<25} {percentage:3.0f}%|\033[34m{bar}\033[0m|')  # Blue bar
+    pbarTotalDistance = tqdm(range(100), 
+                            desc="Progress in race", 
+                            ascii=' █', 
+                            dynamic_ncols=True, 
+                            bar_format='{desc:<25} {percentage:3.0f}%|\033[32m{bar}\033[0m|')  # Green bar
+    
+    while odometer < raceLength * NUM_LAPS and (curTime - timstart) < (timeoutSeconds):
         pbarLapDistance.n = tqdmDistanceConverter(odTrack, raceLength)
         pbarTotalDistance.n = tqdmDistanceConverter(odometer, (raceLength * NUM_LAPS))
+        pbarLapDistance.set_description(f"Progress in lap {lapNum}")
+        pbarTotalDistance.set_description(f"Progress in race")
         pbarLapDistance.refresh()
         pbarTotalDistance.refresh()
         
         odometer = readTach()
         odTrack = odometer % raceLength
+        lapNum = int(odometer // raceLength) + 1
         
+        curTime = tm.time()
         time.sleep(0.1)
         
 
