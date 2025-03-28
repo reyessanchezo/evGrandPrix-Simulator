@@ -1,7 +1,6 @@
 from tqdm import tqdm
-from threading import Thread, Event
+from threading import Thread
 import time
-import sys
 import math
 import time as tm
 
@@ -28,7 +27,7 @@ def DistanceIncrement() -> None:
     global RACELENGTH
     for i in range(100000):
         CURRDISTANCE += 1.1
-        time.sleep(0.01)
+        time.sleep(0.03)
         #print(f'Distance: {tqdmDistanceConverter(CURRDISTANCE)}')
 
 def tqdmDistanceLoop(raceLength) -> None:
@@ -76,4 +75,7 @@ if __name__ == '__main__':
     print(f'please wait...')
     #time.sleep(2)
     #print(f'Distance In Main: {CURRDISTANCE}')
+    while CURRDISTANCE < RACELENGTH * NUM_LAPS:
+        tqdm.write(f'Distance In Main: {CURRDISTANCE}')
+        time.sleep(0.1)
     

@@ -2,7 +2,7 @@ import math, pathlib
 import pandas as pd
 from typing import Tuple
 import time as tm
-import tqdm
+from tqdm import tqdm
 from simple_pid import PID
 
 from tools import readingSerial, writeVoltage
@@ -144,7 +144,6 @@ def max_braking(motor_speed):
     return (-1 * kartBreakAwayForce) #- chunk2 - chunk3
 
 def brakePossible(curSegDistance, raceinfo, trackID) -> bool:
-    #print(f'INSIDE BRAKE POSSIBLE TRACK ID = {trackID}')
     if trackID == len(raceInfo.RaceArray):
         print("WARNING")
     exitrpm = raceinfo.RaceArray[trackID + 1].maxRPM
@@ -288,7 +287,7 @@ if __name__ == '__main__':
     tqdmDistanceThread = Thread(
         target=tqdmDistanceLoop,
         args=(raceInfo.totalLength),
-        daemon=False ##it does not work if it is a daemon, but it naturally stops when the program ends. unsure if this is a problem
+        daemon=False #it does not work if it is a daemon, but it naturally stops when the program ends. unsure if this is a problem but i added a timeout to the function
     )
 
     updateThread.start()
@@ -313,7 +312,7 @@ if __name__ == '__main__':
         for seg in raceInfo.RaceArray:
             if seg.turnRadius < 0:
                 #straight away
-                tqdm.tqdm.write("Kart in straight away")
+                tqdm.write("Kart in straight away")
                 
                 outVoltage = None
 
@@ -321,7 +320,7 @@ if __name__ == '__main__':
                 curSegDistance, origionalTrackID = odTranslator(raceInfo, tacometer_cur_distance)
                 currentRPM = readRPM()
                 currentVoltage = RPMtoVoltage(currentRPM)
-                tqdm.tqdm.write(f'Race segment: {origionalTrackID}, Distance into segment: {curSegDistance}')
+                tqdm.write(f'Race segment: {origionalTrackID}, Distance into segment: {curSegDistance}')
 
                 object = KartVoltage()
                 goalRPM = 1000000
@@ -333,7 +332,7 @@ if __name__ == '__main__':
                 lastTime = startTime
                 brakePossibleBool = True
                 trackID = origionalTrackID
-                tqdm.tqdm.write(f'origional track id: {origionalTrackID}')
+                tqdm.write(f'origional track id: {origionalTrackID}')
                 while seg.length > curSegDistance and trackID == origionalTrackID:
                     tacometer_cur_distance = readTach()
                     curSegDistance, trackID = odTranslator(raceInfo, tacometer_cur_distance)
@@ -348,9 +347,9 @@ if __name__ == '__main__':
                     currentVoltage = object.update(power, dt)
                     
                     if brakePossibleBool is True:
-                        tqdm.tqdm.write(f'(FULL THROTTLE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {curSegDistance}')
+                        tqdm.write(f'(FULL THROTTLE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {curSegDistance}')
                     elif brakePossibleBool is not True:
-                        tqdm.tqdm.write(f'(FULL BRAKE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {curSegDistance}')
+                        tqdm.write(f'(FULL BRAKE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {curSegDistance}')
                     
                     if not brakePossible(curSegDistance, raceInfo, trackID):
                         pid.setpoint = 0
@@ -365,7 +364,7 @@ if __name__ == '__main__':
 
             elif seg.turnRadius > 0:
                 #print(f'Kart is in turn')
-                tqdm.tqdm.write(f'Kart is in turn')
+                tqdm.write(f'Kart is in turn')
                 
                 outVoltage = None
 
@@ -373,7 +372,7 @@ if __name__ == '__main__':
                 curSegDistance, origionalTrackID = odTranslator(raceInfo, tacometer_cur_distance)
                 currentRPM = readRPM()
                 currentVoltage = RPMtoVoltage(currentRPM)
-                tqdm.tqdm.write(f'Race segment: {origionalTrackID}, Distance into segment: {curSegDistance}')
+                tqdm.write(f'Race segment: {origionalTrackID}, Distance into segment: {curSegDistance}')
 
                 object = KartVoltage()
                 goalRPM = seg.maxRPM
@@ -389,7 +388,7 @@ if __name__ == '__main__':
                     tacometer_cur_distance = readTach()
                     curSegDistance, trackID = odTranslator(raceInfo, tacometer_cur_distance)
                     #print(f'THROTTLE: {currentVoltage * 20}%, Race segment: {trackID}, Distance into segment: {curSegDistance}')
-                    tqdm.tqdm.write(f'THROTTLE: {num_to_range(currentVoltage, 0, 5, 0, 100)}%, Race instructions: Turn, Race segment: {trackID}, Distance into segment: {curSegDistance}, Expected RPM: {seg.maxRPM}')
+                    tqdm.write(f'THROTTLE: {num_to_range(currentVoltage, 0, 5, 0, 100)}%, Race instructions: Turn, Race segment: {trackID}, Distance into segment: {curSegDistance}, Expected RPM: {seg.maxRPM}')
                     if trackID != origionalTrackID:
                         break
 
@@ -408,7 +407,7 @@ if __name__ == '__main__':
                 raise ValueError("Race turn radius cannot be 0")
 
         curLap += 1
-        tqdm.tqdm.write(f'Current lap: {curLap}')
+        tqdm.write(f'Current lap: {curLap}')
 
     raceEnd = tm.time()
     print(f'Total execution time: {raceEnd - raceStart}')
