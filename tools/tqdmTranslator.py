@@ -4,9 +4,10 @@ import time
 import math
 import time as tm
 
-RACELENGTH = 153.5
+RACELENGTH = 30 * 4
 CURRDISTANCE = 0
-NUM_LAPS = 3
+NUM_LAPS = 1
+BOOL = False
 
 def num_to_range(num, inMin, inMax, outMin, outMax):
   return outMin + (float(num - inMin) / float(inMax - inMin) * (outMax - outMin))
@@ -24,8 +25,9 @@ def tqdmLoop() -> None:
 
 def DistanceIncrement() -> None:
     global CURRDISTANCE
-    global RACELENGTH
-    for i in range(100000):
+    
+    global BOOL
+    while not BOOL:
         CURRDISTANCE += 1.1
         time.sleep(0.03)
         #print(f'Distance: {tqdmDistanceConverter(CURRDISTANCE)}')
@@ -33,6 +35,7 @@ def DistanceIncrement() -> None:
 def tqdmDistanceLoop(raceLength) -> None:
     global NUM_LAPS
     global CURRDISTANCE
+    global BOOL
     timeout = 5 # in hours
     odometer = CURRDISTANCE
     odTrack = odometer % raceLength
@@ -63,8 +66,10 @@ def tqdmDistanceLoop(raceLength) -> None:
         curTime = tm.time()
         time.sleep(0.01)
     
+    BOOL = True
+    
 if __name__ == '__main__':
-    RACELENGTH = 123.5
+    RACELENGTH = 30 * 4
     
     t1 = Thread(target=DistanceIncrement, daemon=True)
     #t2 = Thread(target=tqdmLoop, daemon=False)
@@ -73,9 +78,10 @@ if __name__ == '__main__':
     #t2.start()
     t3.start()
     print(f'please wait...')
-    #time.sleep(2)
-    #print(f'Distance In Main: {CURRDISTANCE}')
     while CURRDISTANCE < RACELENGTH * NUM_LAPS:
         tqdm.write(f'Distance In Main: {CURRDISTANCE}')
-        time.sleep(0.1)
+        time.sleep(0.5)
+    
+    time.sleep(0.5)
+    tqdm.write(f'Finished. Current distance: {CURRDISTANCE}')
     
