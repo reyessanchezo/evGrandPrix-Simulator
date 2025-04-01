@@ -11,6 +11,9 @@ from queue import Queue, Empty
 from tools import choose_port
 import time
 
+from logger import create_new_racelog_file, append_to_log
+from datetime import datetime
+
 STATICFRICTIONSIDELOADING = 0.4
 STATICFRICTION = 0.4 #2.480847866
 NUM_LAPS = 3
@@ -253,7 +256,15 @@ def tqdmDistanceLoop(raceLength) -> None:
         
         curTime = tm.time()
         time.sleep(0.1)
-        
+
+def ReadTorques() -> float:
+    return TORQS
+
+def ReadRPM() -> int:
+    return G_RPM
+
+def ReadVoltage() -> float:
+    return G_V
 
 class KartVoltage:
     def __init__(self):
@@ -266,6 +277,8 @@ class KartVoltage:
 
 if __name__ == '__main__':
     raceInfo = csv_to_raceinfo("tdec_track.csv")
+    
+    create_new_racelog_file()
     
     print(raceInfo)
     print(f'Number of laps: {NUM_LAPS}')
@@ -310,8 +323,14 @@ if __name__ == '__main__':
             tacometer_curr_distance = readTach()
             currSegDistance, trackID = odTranslator(raceInfo, tacometer_curr_distance)
             print(f'Race segment: {trackID}, Distance into segment: {currSegDistance}')
-
+    
+    #used for checking lap time
+    lapStart = tm.time()
+    lapEnd = lapStart
+    lapTime = 0
+    
     for lap in range(NUM_LAPS):
+        lapStart = tm.time()
         for seg in raceInfo.RaceArray:
             if seg.turnRadius < 0:
                 #straight away
@@ -351,9 +370,16 @@ if __name__ == '__main__':
                     
                     if brakePossibleBool is True:
                         tqdm.write(f'(FULL THROTTLE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {curSegDistance}')
+                        
+                        #logging stuff
+                        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        append_to_log(f"Timestamp: {timestamp}, Race instructions: Straight (Full Throttle), Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Odometer: {G_TACH}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}")
                     elif brakePossibleBool is not True:
                         tqdm.write(f'(FULL BRAKE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {curSegDistance}')
-                    
+                        
+                        #logging stuff
+                        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        append_to_log(f"Timestamp: {timestamp}, Race instructions: Straight (Full Brake), Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Odometer: {G_TACH}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}")
                     if not brakePossible(curSegDistance, raceInfo, trackID):
                         pid.setpoint = 0
                         brakePossibleBool = False
@@ -392,6 +418,11 @@ if __name__ == '__main__':
                     curSegDistance, trackID = odTranslator(raceInfo, tacometer_cur_distance)
                     #print(f'THROTTLE: {currentVoltage * 20}%, Race segment: {trackID}, Distance into segment: {curSegDistance}')
                     tqdm.write(f'THROTTLE: {num_to_range(currentVoltage, 0, 5, 0, 100)}%, Race instructions: Turn, Race segment: {trackID}, Distance into segment: {curSegDistance}, Expected RPM: {seg.maxRPM}')
+                    
+                    #logging stuff
+                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    append_to_log(f"Timestamp: {timestamp}, Race instructions: Turn, Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Odometer: {G_TACH}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}, Expected RPM: {seg.maxRPM}")
+                    
                     if trackID != origionalTrackID:
                         break
 
@@ -408,7 +439,8 @@ if __name__ == '__main__':
                     tm.sleep(abs(0.1 - (lastTime - currentTme)))
             else:
                 raise ValueError("Race turn radius cannot be 0")
-
+        lapEnd = tm.time()
+        lapTime = lapEnd - lapStart
         curLap += 1
         tqdm.write(f'Current lap: {curLap}')
 
