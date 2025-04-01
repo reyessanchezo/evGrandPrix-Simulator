@@ -93,6 +93,7 @@ G_TACH = 0
 G_TACH_START = 0
 G_RPM = 0
 G_V = 0
+TORQS = 0
 
 #Read from kart. Must implement later when functionality is available.
 # From Oscar: Tachometer measures RPM. Odometer measures distance
@@ -190,6 +191,7 @@ def update_globals():
     global G_RPM
     global G_TACH
     global G_TACH_START
+    global TORQS
     while not finished:
         try:
             item = receiveQueue.get()
@@ -205,6 +207,7 @@ def update_globals():
                     G_TACH_START = float(item[1])
                 G_RPM = float(item[0])
                 G_TACH = float(item[1]) - G_TACH_START
+                TORQS = float(item[2])
                 #print(f'ARDUINO: (RPM: {G_RPM}, TACH: {G_TACH})')
             except Exception as e:
                 print("By some miracle this worked but it shoudln't have")
