@@ -145,7 +145,7 @@ def max_braking(motor_speed):
 
 def brakePossible(curSegDistance, raceinfo, trackID) -> bool:
     if trackID == len(raceInfo.RaceArray):
-        print("WARNING")
+        print("WARNING IN BRAKE POSSIBLE: TRACKID IS OUT OF RANGE")
     exitrpm = raceinfo.RaceArray[trackID + 1].maxRPM
     exitrps = rpm_to_motorspeed(exitrpm)
 

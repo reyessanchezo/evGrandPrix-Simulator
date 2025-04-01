@@ -4,9 +4,9 @@ import time
 import math
 import time as tm
 
-RACELENGTH = 30 * 4
+RACELENGTH = 120
 CURRDISTANCE = 0
-NUM_LAPS = 1
+NUM_LAPS = 5
 BOOL = False
 
 def num_to_range(num, inMin, inMax, outMin, outMax):
@@ -69,14 +69,13 @@ def tqdmDistanceLoop(raceLength) -> None:
     BOOL = True
     
 if __name__ == '__main__':
-    RACELENGTH = 30 * 4
+    RACELENGTH = 120
     
     t1 = Thread(target=DistanceIncrement, daemon=True)
-    #t2 = Thread(target=tqdmLoop, daemon=False)
     t3 = Thread(target=tqdmDistanceLoop, daemon=False, args=(RACELENGTH,))
     t1.start()
-    #t2.start()
     t3.start()
+    
     print(f'please wait...')
     while CURRDISTANCE < RACELENGTH * NUM_LAPS:
         tqdm.write(f'Distance In Main: {CURRDISTANCE}')
