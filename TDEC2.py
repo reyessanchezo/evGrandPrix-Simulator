@@ -192,7 +192,7 @@ def sendVoltage(voltage, vq):
     
     # For TDEC2, we are keeping below 2V due a concern over ratings that needs to be checked.
 
-    voltage = clamp(voltage, 0, 2)
+    voltage = clamp(voltage, 0, 1)
     
     # Printing instructions for the driver until we attach a throttle.
     #print(f"THROTTLE: {voltage * 20}%")
