@@ -39,6 +39,7 @@ POLLING_RATE = 0.1
 G_TACH = 0
 G_TACH_START = 0
 G_RPM = 0
+G_V = 0
 TORQS = 0
 
 #segemnt of the race either straight or turn, inlcudes details for the segment
@@ -103,15 +104,16 @@ def csv_to_raceinfo(directory: str | pathlib.Path) -> RaceInfo:
     thisRace = RaceInfo(RaceArray)
     return thisRace
 
-# Takes the odometer read from the Arduino (as pulses) as translates that to distance.
+#Read from kart. Must implement later when functionality is available.
+# From Oscar: Tachometer measures RPM. Odometer measures distance
 def readTach():
     """READ Tachometer"""
     global G_TACH
     return G_TACH * (1 / 60) * (TIRE_DIAMETER * math.pi * GEARING_RATIO)
 
-#odTranslator changes the odometer for distance traveled on the track to a segment ID for which section its in and also a current distance into the length of that section 
-#Ex.: odTranslator(thisRace, 38) --> distance into track (1.86906398) and the RaceDetail object the tacometer distance is currently driving in
-def odTranslator(race: RaceInfo, tacometer: int | float) -> Tuple[float, RaceSeg]:
+#tachTranslator changes the tachometer for distance traveled on the track to a segment ID for which section its in and also a current distance into the length of that section 
+#Ex.: tachTranslator(thisRace, 38) --> distance into track (1.86906398) and the RaceDetail object the tacometer distance is currently driving in
+def tachTranslator(race: RaceInfo, tacometer: int | float) -> Tuple[float, RaceSeg]:
     # From Oscar: the encoder pulses are unsigned long long
     trackPos = tacometer % race.totalLength
     rollingTac = 0
@@ -175,27 +177,29 @@ def num_to_range(num, inMin, inMax, outMin, outMax):
 def RPMtoVoltage(rpm):
     return num_to_range(rpm, 0, 4500, 0.0, 3.3)
 
-# Mostly used as an abstract. Just returns the global variable that gets updated by the Arduino thread.
 def readRPM():
     """READ MOTOR RPM"""
     global G_RPM
     return G_RPM
 
-# Makes sure the voltage remains in scope.
 def clamp(val, minVal, maxVal):
     return max(minVal, min(val, maxVal))
 
 #used to send the voltage to the arduino from this program
 def sendVoltage(voltage, vq):
     """SEND A VOLTAGE"""
+    global G_V
     
     # For TDEC2, we are keeping below 2V due a concern over ratings that needs to be checked.
-    voltage = clamp(voltage, 0, 1)
 
+    voltage = clamp(voltage, 0, 1)
+    
+    # Printing instructions for the driver until we attach a throttle.
+    #print(f"THROTTLE: {voltage * 20}%")
     vq.put(voltage)
     return
 
-# Parses the data that gets read from the Arduino.
+#GARRET
 finished = False
 def update_globals():
     global finished
@@ -212,20 +216,15 @@ def update_globals():
             print("Ending program.")
             break
         else:
+            #print(f"RPM: {item[0]}\tTotal Pulses: {item[4]}\tV: {item[3]}")
             try:
-                # The data is sent to the program and seperated into a list that contains the data we need.
-                # We initialize the odometer as a starting value on the first read.
                 if (G_TACH_START == 0):
                     G_TACH_START = float(item[1])
-                # [0] reads the rpm from the torque sensor.
                 G_RPM = float(item[0])
-                # [1] reads the odometer as total pulses.
                 G_TACH = float(item[1]) - G_TACH_START
-                # [2] reads the actual torque from the sensor.
                 TORQS = float(item[2])
+                #print(f'ARDUINO: (RPM: {G_RPM}, TACH: {G_TACH})')
             except Exception as e:
-                # During early testing, the Arduino would sometimes only send half a byte due to interrupts. This resulted in useless data.
-                # This got worse at higher RPMs. This was a way to indicate when this happened. May no longer be an issue.
                 print("By some miracle this worked but it shoudln't have")
             receiveQueue.task_done()
 
@@ -238,8 +237,8 @@ def tqdmDistanceLoop(raceLength) -> None:
     timeoutHours = 5 # in hours
     timeoutSeconds = timeoutHours * 60 * 60
     
-    odometer = readTach()
-    odTrack = odometer % raceLength
+    tachometer = readTach()
+    odTrack = tachometer % raceLength
     lapNum = 1
     
     timstart = tm.time()
@@ -256,25 +255,29 @@ def tqdmDistanceLoop(raceLength) -> None:
                             dynamic_ncols=True, 
                             bar_format='{desc:<25} {percentage:3.0f}%|\033[32m{bar}\033[0m|')  # Green bar
     
-    while odometer < raceLength * NUM_LAPS and (curTime - timstart) < (timeoutSeconds):
+    while tachometer < raceLength * NUM_LAPS and (curTime - timstart) < (timeoutSeconds):
         pbarLapDistance.n = tqdmDistanceConverter(odTrack, raceLength)
-        pbarTotalDistance.n = tqdmDistanceConverter(odometer, (raceLength * NUM_LAPS))
+        pbarTotalDistance.n = tqdmDistanceConverter(tachometer, (raceLength * NUM_LAPS))
         pbarLapDistance.set_description(f"Progress in lap {lapNum}")
         pbarTotalDistance.set_description(f"Progress in race")
         pbarLapDistance.refresh()
         pbarTotalDistance.refresh()
         
-        odometer = readTach()
-        odTrack = odometer % raceLength
-        lapNum = int(odometer // raceLength) + 1
+        tachometer = readTach()
+        odTrack = tachometer % raceLength
+        lapNum = int(tachometer // raceLength) + 1
         
         curTime = tm.time()
         time.sleep(0.1)
 
-# An abstraction to read the torque using a function.
-def readTorques() -> float:
-    global TORQS
+def ReadTorques() -> float:
     return TORQS
+
+def ReadRPM() -> int:
+    return G_RPM
+
+def ReadVoltage() -> float:
+    return G_V
 
 #a class used in the voltage PID loop
 class KartVoltage:
@@ -347,7 +350,7 @@ if __name__ == '__main__':
     if odTestMode == 1:
         for i in range(1000):
             tacometer_curr_distance = readTach()
-            currSegDistance, trackID = odTranslator(raceInfo, tacometer_curr_distance)
+            currSegDistance, trackID = tachTranslator(raceInfo, tacometer_curr_distance)
             print(f'Race segment: {trackID}, Distance into segment: {currSegDistance}')
     
     #used for checking lap time
@@ -369,7 +372,7 @@ if __name__ == '__main__':
                 outVoltage = None
 
                 tacometer_cur_distance = readTach()
-                curSegDistance, origionalTrackID = odTranslator(raceInfo, tacometer_cur_distance)
+                curSegDistance, origionalTrackID = tachTranslator(raceInfo, tacometer_cur_distance)
                 currentRPM = readRPM()
                 currentVoltage = RPMtoVoltage(currentRPM)
                 tqdm.write(f'Race segment: {origionalTrackID}, Distance into segment: {curSegDistance}')
@@ -398,7 +401,7 @@ if __name__ == '__main__':
                 #runs a loop until the kart leaves the segment
                 while seg.length > curSegDistance and trackID == origionalTrackID:
                     tacometer_cur_distance = readTach()
-                    curSegDistance, trackID = odTranslator(raceInfo, tacometer_cur_distance)
+                    curSegDistance, trackID = tachTranslator(raceInfo, tacometer_cur_distance)
                     #print(f'(FULL THROTTLE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {curSegDistance}')
                     
                     if trackID != origionalTrackID:
@@ -415,7 +418,7 @@ if __name__ == '__main__':
                         
                         #logging stuff
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        appendToLog(f"Timestamp: {timestamp}, Race instructions: Straight (Full Throttle), Torque: {readTorques()}, RPM: {readRPM()}, Voltage: {outVoltage}, Power: {readRPM() * readTorques()}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Last Segment Time: {segtime}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Odometer: {readTach()}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}")
+                        appendToLog(f"Timestamp: {timestamp}, Race instructions: Straight (Full Throttle), Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Last Segment Time: {segtime}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Tachometer: {G_TACH}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}")
                     
                     #if we could not brake down to where we need to be then we brake (it will catch this on the first hit)
                     elif brakePossibleBool is not True:
@@ -423,7 +426,7 @@ if __name__ == '__main__':
                         
                         #logging stuff
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        appendToLog(f"Timestamp: {timestamp}, Race instructions: Straight (Full Throttle), Torque: {readTorques()}, RPM: {readRPM()}, Voltage: {outVoltage}, Power: {readRPM() * readTorques()}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Last Segment Time: {segtime}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Odometer: {readTach()}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}")
+                        appendToLog(f"Timestamp: {timestamp}, Race instructions: Straight (Full Brake), Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Last Segment Time: {segtime}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Tachometer: {G_TACH}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}")
                     
                     #checks for if we can brake down to where we need to be if not, set the PID setpoint to 0 and holler about it
                     if not brakePossible(curSegDistance, raceInfo, trackID):
@@ -449,7 +452,7 @@ if __name__ == '__main__':
 
                 #intializes the several variables
                 tacometer_cur_distance = readTach()
-                curSegDistance, origionalTrackID = odTranslator(raceInfo, tacometer_cur_distance)
+                curSegDistance, origionalTrackID = tachTranslator(raceInfo, tacometer_cur_distance)
                 currentRPM = readRPM()
                 currentVoltage = RPMtoVoltage(currentRPM)
                 tqdm.write(f'Race segment: {origionalTrackID}, Distance into segment: {curSegDistance}')
@@ -472,13 +475,13 @@ if __name__ == '__main__':
                 #runs a loop until the kart leaves the segment
                 while seg.length > curSegDistance and trackID == origionalTrackID:
                     tacometer_cur_distance = readTach()
-                    curSegDistance, trackID = odTranslator(raceInfo, tacometer_cur_distance)
+                    curSegDistance, trackID = tachTranslator(raceInfo, tacometer_cur_distance)
                     #print(f'THROTTLE: {currentVoltage * 20}%, Race segment: {trackID}, Distance into segment: {curSegDistance}')
                     tqdm.write(f'THROTTLE: {num_to_range(currentVoltage, 0, 3.3, 0, 100)}%, Race instructions: Turn, Race segment: {trackID}, Distance into segment: {curSegDistance}, Expected RPM: {seg.maxRPM}')
                     
                     #logging stuff
                     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    appendToLog(f"Timestamp: {timestamp}, Race instructions: Straight (Full Throttle), Torque: {readTorques()}, RPM: {readRPM()}, Voltage: {outVoltage}, Power: {readRPM() * readTorques()}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Last Segment Time: {segtime}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Odometer: {readTach()}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}, Expected RPM: {seg.maxRPM}")
+                    appendToLog(f"Timestamp: {timestamp}, Race instructions: Turn, Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Last Segment Time: {segtime}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, tachometer: {G_TACH}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}, Expected RPM: {seg.maxRPM}")
                     
                     if trackID != origionalTrackID:
                         break
