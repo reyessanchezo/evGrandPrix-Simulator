@@ -9,6 +9,7 @@ from tools import readingSerial, writeVoltage
 from threading import Thread, Event
 from queue import Queue, Empty
 from tools import choose_port
+from tools import dynoSwitch, dynoMode
 import time
 
 from logger import create_new_racelog_file, append_to_log
@@ -286,6 +287,7 @@ if __name__ == '__main__':
 
     sendQueue = Queue()
     receiveQueue = Queue()
+    dynoQueue = Queue()
     sp = choose_port()
 
     updateThread = Thread(
@@ -297,6 +299,12 @@ if __name__ == '__main__':
     voltageThread = Thread(
         target=writeVoltage,
         args=(sp, sendQueue, receiveQueue),
+        daemon=True
+    )
+
+    dynoThread = Thread(
+        target=dynoSwitch,
+        args=(dynoQueue,),
         daemon=True
     )
     
@@ -344,6 +352,9 @@ if __name__ == '__main__':
                 currentVoltage = RPMtoVoltage(currentRPM)
                 tqdm.write(f'Race segment: {origionalTrackID}, Distance into segment: {curSegDistance}')
 
+                # tell dyno to run normal physics
+                dynoMode(1, dynoQueue)
+
                 object = KartVoltage()
                 goalRPM = 1000000
                 goalVoltage = RPMtoVoltage(goalRPM)
@@ -384,6 +395,9 @@ if __name__ == '__main__':
                         pid.setpoint = 0
                         brakePossibleBool = False
 
+                        # tell the dyno to run full brakes
+                        dynoMode(0, dynoQueue)
+
                     outVoltage = object.current
                     #print(f'Out Voltage For Straight Away: {outVoltage}')
                     sendVoltage(outVoltage, sendQueue)
@@ -402,6 +416,9 @@ if __name__ == '__main__':
                 currentRPM = readRPM()
                 currentVoltage = RPMtoVoltage(currentRPM)
                 tqdm.write(f'Race segment: {origionalTrackID}, Distance into segment: {curSegDistance}')
+
+                # tell dyno to run normal physics
+                dynoMode(1, dynoQueue)
 
                 object = KartVoltage()
                 goalRPM = seg.maxRPM
