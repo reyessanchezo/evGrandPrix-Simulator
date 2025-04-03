@@ -27,7 +27,6 @@ String digitalTorque;
 uint32_t count = 0;
 uint32_t totalCount = 0;
 unsigned int throttleVal = 0;
-float rpm_filt = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -73,14 +72,12 @@ void loop() {
     pulseCount = 0;
     actualInterval = currentMillis - previousMillis;
     previousMillis = currentMillis;  
-    rpm = (count * (1000/actualInterval) * 60) / pulsesPerRevolution;
-    rpm_filt = (rpm_filt * 0.9) + (rpm * 0.1); // quick weighted-average filter
+    rpm = (count * 1000 * 60 ) / actualInterval / pulsesPerRevolution;
     
     Serial.println(
       String(rpm) + "\t" + 
       String(totalCount) + "\t" + 
       digitalTorque + "\t" + 
-      String(SerialLastRead) + "\t" + 
       throttleVal
     );
 
