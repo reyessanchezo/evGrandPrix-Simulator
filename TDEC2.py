@@ -234,7 +234,7 @@ def tqdmDistanceConverter(currDistance, totalDistance) -> int:
 #used to make tqdm progress bar for the distance traveled on the track. When inside main, it looks bad and is not precise.
 def tqdmDistanceLoop(raceLength) -> None:
     global NUM_LAPS
-    timeoutHours = 5 # in hours
+    timeoutHours = 5 # number of hours before the function times itself out
     timeoutSeconds = timeoutHours * 60 * 60
     
     tachometer = readTach()
