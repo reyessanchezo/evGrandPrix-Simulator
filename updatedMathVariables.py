@@ -1,3 +1,4 @@
+#List of constants used in the program, this is the reference for the constants
 STATICFRICTIONSIDELOADING = 2.205155149
 STATICFRICTION = 1.083261219 #2.480847866
 
