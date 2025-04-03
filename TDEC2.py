@@ -166,7 +166,7 @@ def num_to_range(num, inMin, inMax, outMin, outMax):
   return outMin + (float(num - inMin) / float(inMax - inMin) * (outMax - outMin))
 
 def RPMtoVoltage(rpm):
-    return num_to_range(rpm, 0, 4500, 0.0, 5)
+    return num_to_range(rpm, 0, 4500, 0.0, 3.3)
 
 def readRPM():
     """READ MOTOR RPM"""
@@ -358,8 +358,8 @@ if __name__ == '__main__':
                 object = KartVoltage()
                 goalRPM = 1000000
                 goalVoltage = RPMtoVoltage(goalRPM)
-                pid = PID(3, 0.01, 0.1, setpoint=goalVoltage)
-                pid.output_limits = (0, 5)
+                pid = PID(1, 0.01, 0.1, setpoint=goalVoltage)
+                pid.output_limits = (0, 3.3)
 
                 startTime = tm.time()
                 lastTime = startTime
@@ -422,8 +422,8 @@ if __name__ == '__main__':
                 object = KartVoltage()
                 goalRPM = seg.maxRPM
                 goalVoltage = RPMtoVoltage(goalRPM)
-                pid = PID(3, 0.01, 0.1, setpoint=goalVoltage)
-                pid.output_limits = (0, 5)
+                pid = PID(1, 0.01, 0.1, setpoint=goalVoltage)
+                pid.output_limits = (0, 3.3)
 
                 startTime = tm.time()
                 lastTime = startTime
@@ -433,7 +433,7 @@ if __name__ == '__main__':
                     tacometer_cur_distance = readTach()
                     curSegDistance, trackID = odTranslator(raceInfo, tacometer_cur_distance)
                     #print(f'THROTTLE: {currentVoltage * 20}%, Race segment: {trackID}, Distance into segment: {curSegDistance}')
-                    tqdm.write(f'THROTTLE: {num_to_range(currentVoltage, 0, 5, 0, 100)}%, Race instructions: Turn, Race segment: {trackID}, Distance into segment: {curSegDistance}, Expected RPM: {seg.maxRPM}')
+                    tqdm.write(f'THROTTLE: {num_to_range(currentVoltage, 0, 3.3, 0, 100)}%, Race instructions: Turn, Race segment: {trackID}, Distance into segment: {curSegDistance}, Expected RPM: {seg.maxRPM}')
                     
                     #logging stuff
                     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
