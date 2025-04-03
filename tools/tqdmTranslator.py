@@ -79,7 +79,7 @@ if __name__ == '__main__':
     print(f'please wait...')
     while CURRDISTANCE < RACELENGTH * NUM_LAPS:
         tqdm.write(f'Distance In Main: {CURRDISTANCE}')
-        time.sleep(0.5)
+        time.sleep(0.1)
     
     time.sleep(0.5)
     tqdm.write(f'Finished. Current distance: {CURRDISTANCE}')

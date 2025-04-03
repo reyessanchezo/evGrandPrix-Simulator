@@ -389,7 +389,7 @@ if __name__ == '__main__':
                     sendVoltage(outVoltage, sendQueue)
 
                     lastTime = tm.time()
-                    tm.sleep(abs(0.1 - (lastTime - currentTme)))
+                    tm.sleep(abs(POLLING_RATE - (lastTime - currentTme)))
 
             elif seg.turnRadius > 0:
                 #print(f'Kart is in turn')
@@ -436,7 +436,7 @@ if __name__ == '__main__':
                     sendVoltage(currentVoltage, sendQueue)
 
                     lastTime = tm.time()
-                    tm.sleep(abs(0.1 - (lastTime - currentTme)))
+                    tm.sleep(abs(POLLING_RATE - (lastTime - currentTme)))
             else:
                 raise ValueError("Race turn radius cannot be 0")
         lapEnd = tm.time()
