@@ -12,26 +12,32 @@ from tools import choose_port
 from tools import dynoSwitch, dynoMode
 import time
 
-from logger import create_new_racelog_file, append_to_log
+from logger import createNewRacelogFile, appendToLog
 from datetime import datetime
 
-STATICFRICTIONSIDELOADING = 0.4
-STATICFRICTION = 0.4 #2.480847866
-NUM_LAPS = 3
-POLLING_RATE = 0.1
+STATICFRICTIONSIDELOADING = 2.205155149
+STATICFRICTION = 1.083261219 #2.480847866
 
 AIR_DENSITY = 1.2  # Air density (kg/m^3)
 DRAG_COEFF = 0.8  # Drag Coefficient (unitless)
 GRAV_ACCELLERATION = 9.8  # Gravity acceleration constant (m/s^2)
 GEARING_RATIO = 9.0 / 68.0  # Gearing Ratio (Tire revolutions / Motor revolutions)
-MASS = 136.0  # Kart mass (kg)
-MAX_CROSSSECTIONAL_AREA = 0.5  # Maximum cross-sectional area (m^2)
+MASS = 161.78  # Kart mass (kg)
+MAX_CROSSSECTIONAL_AREA = 0.7  # Maximum cross-sectional area (m^2)
 TIRE_DIAMETER = 0.254  # Kart tire diameter (m)
 TIRE_PRESSURE = 1.0  # Tire pressure (barr)
-TRANSMISSION_EFFICIENCY = 0.9  # Need clarification!!!
-#ROLLING_RESISTANCE = 1.0  # Nm. Need clarification!!!
+TRANSMISSION_EFFICIENCY = 0.9  # not a perfect number
 
-MOTORTORQUE = 3.7 * 3  ##Nm
+MOTORTORQUE = 5.5  ##Nm 
+
+NUM_LAPS = 3
+POLLING_RATE = 0.1
+
+G_TACH = 0
+G_TACH_START = 0
+G_RPM = 0
+G_V = 0
+TORQS = 0
 
 class RaceSeg:
     def __init__(self, length, turnRadius=-1):
@@ -92,12 +98,6 @@ def csv_to_raceinfo(directory: str | pathlib.Path) -> RaceInfo:
     
     thisRace = RaceInfo(RaceArray)
     return thisRace
-
-G_TACH = 0
-G_TACH_START = 0
-G_RPM = 0
-G_V = 0
-TORQS = 0
 
 #Read from kart. Must implement later when functionality is available.
 # From Oscar: Tachometer measures RPM. Odometer measures distance
@@ -277,9 +277,9 @@ class KartVoltage:
         return self.current
 
 if __name__ == '__main__':
-    raceInfo = csv_to_raceinfo("tdec_track.csv")
+    raceInfo = csv_to_raceinfo("PurdueevGrandPrixTrackCSV.csv")
     
-    create_new_racelog_file()
+    createNewRacelogFile()
     
     print(raceInfo)
     print(f'Number of laps: {NUM_LAPS}')
@@ -384,13 +384,13 @@ if __name__ == '__main__':
                         
                         #logging stuff
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        append_to_log(f"Timestamp: {timestamp}, Race instructions: Straight (Full Throttle), Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Odometer: {G_TACH}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}")
+                        appendToLog(f"Timestamp: {timestamp}, Race instructions: Straight (Full Throttle), Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Odometer: {G_TACH}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}")
                     elif brakePossibleBool is not True:
                         tqdm.write(f'(FULL BRAKE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {curSegDistance}')
                         
                         #logging stuff
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        append_to_log(f"Timestamp: {timestamp}, Race instructions: Straight (Full Brake), Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Odometer: {G_TACH}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}")
+                        appendToLog(f"Timestamp: {timestamp}, Race instructions: Straight (Full Brake), Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Odometer: {G_TACH}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}")
                     if not brakePossible(curSegDistance, raceInfo, trackID):
                         pid.setpoint = 0
                         brakePossibleBool = False
@@ -406,7 +406,6 @@ if __name__ == '__main__':
                     tm.sleep(abs(POLLING_RATE - (lastTime - currentTme)))
 
             elif seg.turnRadius > 0:
-                #print(f'Kart is in turn')
                 tqdm.write(f'Kart is in turn')
                 
                 outVoltage = None
@@ -438,7 +437,7 @@ if __name__ == '__main__':
                     
                     #logging stuff
                     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    append_to_log(f"Timestamp: {timestamp}, Race instructions: Turn, Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Odometer: {G_TACH}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}, Expected RPM: {seg.maxRPM}")
+                    appendToLog(f"Timestamp: {timestamp}, Race instructions: Turn, Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Odometer: {G_TACH}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}, Expected RPM: {seg.maxRPM}")
                     
                     if trackID != origionalTrackID:
                         break

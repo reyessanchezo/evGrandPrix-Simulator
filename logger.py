@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 
-def create_new_racelog_filename(directory="logs"):
+def createNewRacelogFilename(directory="logs"):
     # Get all files in the directory
     files = [f for f in os.listdir(directory) if f.startswith("raceLog") and f.endswith(".log")]
     
@@ -24,8 +24,8 @@ def create_new_racelog_filename(directory="logs"):
     
     return f"raceLog{next_num}.log"
 
-def create_new_racelog_file(directory="logs"):
-    filename = create_new_racelog_filename(directory)
+def createNewRacelogFile(directory="logs"):
+    filename = createNewRacelogFilename(directory)
     filepath = os.path.join(directory, filename)
     
     # Create an empty file
@@ -34,7 +34,7 @@ def create_new_racelog_file(directory="logs"):
     
     return filepath
 
-def append_to_log(message, directory="logs"):
+def appendToLog(message, directory="logs"):
     # Get the latest log file
     files = [f for f in os.listdir(directory) if f.startswith("raceLog") and f.endswith(".log")]
     if not files:
@@ -56,7 +56,7 @@ def append_to_log(message, directory="logs"):
             f.write('\n')
         f.write(message)
 
-create_new_racelog_file()        
+createNewRacelogFile()        
 for i in range(1000):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    append_to_log(f"Timestamp: {timestamp}, Race instructions: Straight (Full Throttle), Torque: 10, RPM: 1000, Voltage: 3.4, Power: 10000, Last Lap Time: 125.3, Current Lap: 5, Total Laps: 50, Current Segment: 2, Distance into Segment: 5.345, Odometer: 123456, Brake Possible: True, PID Setpoint: 1000000")
+    appendToLog(f"Timestamp: {timestamp}, Race instructions: Straight (Full Throttle), Torque: 10, RPM: 1000, Voltage: 3.4, Power: 10000, Last Lap Time: 125.3, Current Lap: 5, Total Laps: 50, Current Segment: 2, Distance into Segment: 5.345, Odometer: 123456, Brake Possible: True, PID Setpoint: 1000000")
