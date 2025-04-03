@@ -15,6 +15,7 @@ import time
 from logger import createNewRacelogFile, appendToLog
 from datetime import datetime
 
+#Global variables including
 STATICFRICTIONSIDELOADING = 2.205155149
 STATICFRICTION = 1.083261219 #2.480847866
 
@@ -340,6 +341,7 @@ if __name__ == '__main__':
     for lap in range(NUM_LAPS):
         lapStart = tm.time()
         for seg in raceInfo.RaceArray:
+            segstart = tm.time()
             if seg.turnRadius < 0:
                 #straight away
                 tqdm.write("Kart in straight away")
@@ -384,13 +386,13 @@ if __name__ == '__main__':
                         
                         #logging stuff
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        appendToLog(f"Timestamp: {timestamp}, Race instructions: Straight (Full Throttle), Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Odometer: {G_TACH}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}")
+                        appendToLog(f"Timestamp: {timestamp}, Race instructions: Straight (Full Throttle), Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Last Segment Time: {segtime}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Odometer: {G_TACH}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}")
                     elif brakePossibleBool is not True:
                         tqdm.write(f'(FULL BRAKE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {curSegDistance}')
                         
                         #logging stuff
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        appendToLog(f"Timestamp: {timestamp}, Race instructions: Straight (Full Brake), Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Odometer: {G_TACH}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}")
+                        appendToLog(f"Timestamp: {timestamp}, Race instructions: Straight (Full Brake), Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Last Segment Time: {segtime}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Odometer: {G_TACH}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}")
                     if not brakePossible(curSegDistance, raceInfo, trackID):
                         pid.setpoint = 0
                         brakePossibleBool = False
@@ -437,7 +439,7 @@ if __name__ == '__main__':
                     
                     #logging stuff
                     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    appendToLog(f"Timestamp: {timestamp}, Race instructions: Turn, Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Odometer: {G_TACH}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}, Expected RPM: {seg.maxRPM}")
+                    appendToLog(f"Timestamp: {timestamp}, Race instructions: Turn, Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Last Segment Time: {segtime}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Odometer: {G_TACH}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}, Expected RPM: {seg.maxRPM}")
                     
                     if trackID != origionalTrackID:
                         break
@@ -455,6 +457,8 @@ if __name__ == '__main__':
                     tm.sleep(abs(POLLING_RATE - (lastTime - currentTme)))
             else:
                 raise ValueError("Race turn radius cannot be 0")
+            segend = tm.time()
+            segtime = segend - segstart
         lapEnd = tm.time()
         lapTime = lapEnd - lapStart
         curLap += 1
