@@ -192,14 +192,13 @@ def sendVoltage(voltage, vq):
     
     # For TDEC2, we are keeping below 2V due a concern over ratings that needs to be checked.
 
-    voltage = clamp(voltage, 0, 1)
+    voltage = clamp(voltage, 0, 3.3)
     
     # Printing instructions for the driver until we attach a throttle.
     #print(f"THROTTLE: {voltage * 20}%")
     vq.put(voltage)
     return
 
-#GARRET
 finished = False
 def update_globals():
     global finished
@@ -388,7 +387,7 @@ if __name__ == '__main__':
                 tqdm.write(f'Race segment: {origionalTrackID}, Distance into segment: {curSegDistance}')
 
                 # tell dyno to run normal physics
-                dynoMode(1, dynoQueue)
+                dynoMode(0, dynoQueue)
 
                 #creates a PID controller for the voltage
                 object = KartVoltage()
@@ -428,6 +427,8 @@ if __name__ == '__main__':
                         kph = RPMtoKPH(readRPM())
                         tqdm.write(f'(FULL THROTTLE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {curSegDistance}, Speed: {mph} mph, {kph} kph')
                         
+                        dynoMode(0, dynoQueue)
+
                         #logging stuff
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         appendToLog(f"Timestamp: {timestamp}, Race instructions: Straight (Full Throttle), Speed: {mph} mph, {kph} kph, Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Last Segment Time: {segtime}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Tachometer: {G_TACH}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}")
@@ -448,7 +449,7 @@ if __name__ == '__main__':
                         brakePossibleBool = False
 
                         # tell the dyno to run full brakes
-                        dynoMode(0, dynoQueue)
+                        dynoMode(1, dynoQueue)
                     
                     #generates the voltage for the kart
                     outVoltage = object.current
@@ -472,7 +473,7 @@ if __name__ == '__main__':
                 tqdm.write(f'Race segment: {origionalTrackID}, Distance into segment: {curSegDistance}')
 
                 # tell dyno to run normal physics
-                dynoMode(1, dynoQueue)
+                dynoMode(0, dynoQueue)
                 
                 #creates a PID controller for the voltage
                 object = KartVoltage()
