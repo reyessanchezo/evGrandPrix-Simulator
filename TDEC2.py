@@ -32,7 +32,7 @@ TRANSMISSION_EFFICIENCY = 0.9  # not a perfect number
 MOTORTORQUE = 5.5  ##Nm 
 
 #race parameters
-NUM_LAPS = 3
+NUM_LAPS = 1
 POLLING_RATE = 0.03
 
 #torque sensor variables
@@ -300,7 +300,7 @@ class KartVoltage:
 
 if __name__ == '__main__':
     #translates csv file into our custom classes
-    raceInfo = csv_to_raceinfo("PurdueevGrandPrixTrackCSV.csv")
+    raceInfo = csv_to_raceinfo("tdec_track.csv")
     
     #initiates a new race log file
     createNewRacelogFile()
