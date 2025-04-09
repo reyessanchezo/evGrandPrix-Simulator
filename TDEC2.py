@@ -191,11 +191,7 @@ def sendVoltage(voltage, vq):
     global G_V
     
     # For TDEC2, we are keeping below 2V due a concern over ratings that needs to be checked.
-
-    voltage = clamp(voltage, 0, 3.3)
-    
-    # Printing instructions for the driver until we attach a throttle.
-    #print(f"THROTTLE: {voltage * 20}%")
+    voltage = clamp(round(voltage, 1), 0, 3.3)
     vq.put(voltage)
     return
 
@@ -329,7 +325,6 @@ if __name__ == '__main__':
         daemon=True
     )
 
-    #GARRET
     dynoThread = Thread(
         target=dynoSwitch,
         args=(dynoQueue,),
@@ -393,12 +388,13 @@ if __name__ == '__main__':
                 object = KartVoltage()
                 goalRPM = 1000000
                 goalVoltage = RPMtoVoltage(goalRPM)
-                pid = PID(1, 0.01, 0.1, setpoint=goalVoltage)
+                pid = PID(3, 0.01, 0.1, setpoint=goalVoltage)
                 pid.output_limits = (0, 3.3)
 
                 #used to keep track of time
                 startTime = tm.time()
                 lastTime = startTime
+                
                 
                 #used as an initial condition for the brake possible function
                 brakePossibleBool = True
@@ -417,6 +413,7 @@ if __name__ == '__main__':
                         break
 
                     currentTme = tm.time()
+                    segtime = currentTme
                     dt = currentTme - lastTime
                     power = pid(currentVoltage)
                     currentVoltage = object.update(power, dt)
@@ -479,7 +476,7 @@ if __name__ == '__main__':
                 object = KartVoltage()
                 goalRPM = seg.maxRPM
                 goalVoltage = RPMtoVoltage(goalRPM)
-                pid = PID(1, 0.01, 0.1, setpoint=goalVoltage)
+                pid = PID(3, 0.01, 0.1, setpoint=goalVoltage)
                 pid.output_limits = (0, 3.3)
 
                 startTime = tm.time()

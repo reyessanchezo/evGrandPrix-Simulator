@@ -1,7 +1,7 @@
 import can
 import usb
 
-dev = usb.core.find(idVendor=0x1D50, idProduct=0x606F)
+#dev = usb.core.find(idVendor=0x1D50, idProduct=0x606F)
 
 
 class Listen(can.Listener):
