@@ -61,7 +61,7 @@ class RaceSeg:
 class RaceInfo:
     def __init__(self, RaceArray, isLoop=True):
         self.RaceArray = RaceArray
-        self.isLoop = isLoop
+        self.isLoop = True
         self.calcTotalLength()
         self.currPositionTotal = 0
         self.currPositionTrack = 0
@@ -339,7 +339,7 @@ if __name__ == '__main__':
     #used to initiate tqdm progress bar
     tqdmDistanceThread = Thread(
         target=tqdmDistanceLoop,
-        args=(raceInfo.totalLength),
+        args=(float(raceInfo.totalLength)),
         daemon=False #it does not work if it is a daemon, but it naturally stops when the program ends. unsure if this is a problem but i added a timeout to the function
     )
 
