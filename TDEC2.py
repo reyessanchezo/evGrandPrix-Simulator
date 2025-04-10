@@ -149,6 +149,8 @@ def max_acceleration (motor_speed):
     else:
         return kartMaxForce - chunk2 - chunk3
 
+"""TODO: double check if brake possible is in agreement with the LISP code"""
+
 #used for finding the maximum braking the kart could do at given motorspeed
 def max_braking(motor_speed):
     kartBreakAwayForce = 0.99 * GRAV_ACCELLERATION * STATICFRICTION
@@ -226,6 +228,7 @@ def update_globals():
 def tqdmDistanceConverter(currDistance, totalDistance) -> int:
     return int(math.ceil(num_to_range(currDistance, 0, totalDistance, 0, 100)))
 
+"""TODO: double check if the problem was actually just that randome extra comma"""
 #used to make tqdm progress bar for the distance traveled on the track. When inside main, it looks bad and is not precise.
 def tqdmDistanceLoop(raceLength) -> None:
     global NUM_LAPS
@@ -334,7 +337,7 @@ if __name__ == '__main__':
     #used to initiate tqdm progress bar
     tqdmDistanceThread = Thread(
         target=tqdmDistanceLoop,
-        args=(float(raceInfo.totalLength)),
+        args=(float(raceInfo.totalLength), ),
         daemon=False #it does not work if it is a daemon, but it naturally stops when the program ends. unsure if this is a problem but i added a timeout to the function
     )
 
@@ -365,7 +368,7 @@ if __name__ == '__main__':
     #main loop for the race where the kart drives around the track a set number of laps
     for lap in range(NUM_LAPS):
         lapStart = tm.time()
-        
+        segtime = 0
         #loop for each segment of the track
         for seg in raceInfo.RaceArray:
             segstart = tm.time()
@@ -407,24 +410,37 @@ if __name__ == '__main__':
                 while seg.length > curSegDistance and trackID == origionalTrackID:
                     tacometer_cur_distance = readTach()
                     curSegDistance, trackID = tachTranslator(raceInfo, tacometer_cur_distance)
-                    #print(f'(FULL THROTTLE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {curSegDistance}')
                     
                     if trackID != origionalTrackID:
                         break
 
                     currentTme = tm.time()
-                    segtime = currentTme
                     dt = currentTme - lastTime
                     power = pid(currentVoltage)
                     currentVoltage = object.update(power, dt)
+                    
+                    #checks for if we can brake down to where we need to be if not, set the PID setpoint to 0 and holler about it
+                    possible = brakePossible(curSegDistance, raceInfo, trackID)
+                    if not possible:
+                        pid.setpoint = 0
+                        brakePossibleBool = False
+
+                        # tell the dyno to run full brakes
+                        dynoMode(1, dynoQueue)
+                    elif possible:
+                        #if it becomes possible to brake down to where we need to be, set the setpoint to the goal voltage
+                        """TODO: check if this fixes the problem with the brakes working a little too well
+                        this will either very okay and good or very very bad"""
+                        
+                        brakePossibleBool = True
+                        pid.setpoint = goalVoltage
+                        dynoMode(0, dynoQueue)
                     
                     #if we could brake down to where we need to be then we do not need to brake
                     if brakePossibleBool is True:
                         mph = RPMtoMPH(readRPM())
                         kph = RPMtoKPH(readRPM())
                         tqdm.write(f'(FULL THROTTLE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {curSegDistance}, Speed: {mph} mph, {kph} kph')
-                        
-                        dynoMode(0, dynoQueue)
 
                         #logging stuff
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -440,13 +456,7 @@ if __name__ == '__main__':
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         appendToLog(f"Timestamp: {timestamp}, Race instructions: Straight (Full Brake), Speed: {mph} mph, {kph} kph, Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Last Segment Time: {segtime}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Tachometer: {G_TACH}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}")
                     
-                    #checks for if we can brake down to where we need to be if not, set the PID setpoint to 0 and holler about it
-                    if not brakePossible(curSegDistance, raceInfo, trackID):
-                        pid.setpoint = 0
-                        brakePossibleBool = False
-
-                        # tell the dyno to run full brakes
-                        dynoMode(1, dynoQueue)
+                    
                     
                     #generates the voltage for the kart
                     outVoltage = object.current
