@@ -4,7 +4,7 @@ import time
 import math
 import time as tm
 
-RACELENGTH = 120.30
+RACELENGTH = 120
 CURRDISTANCE = 0
 NUM_LAPS = 5
 BOOL = False
@@ -69,7 +69,7 @@ def tqdmDistanceLoop(raceLength) -> None:
     BOOL = True
     
 if __name__ == '__main__':
-    RACELENGTH = 120.30
+    RACELENGTH = 120
     
     t1 = Thread(target=DistanceIncrement, daemon=True)
     t3 = Thread(target=tqdmDistanceLoop, daemon=False, args=(RACELENGTH,))

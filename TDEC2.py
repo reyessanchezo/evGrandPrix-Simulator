@@ -176,11 +176,8 @@ def brakePossible(curSegDistance, raceinfo, trackID) -> bool:
 def num_to_range(num, inMin, inMax, outMin, outMax):
   return outMin + (float(num - inMin) / float(inMax - inMin) * (outMax - outMin))
 
-#converts RPM to voltage
-maxRPM = 4900
 def RPMtoVoltage(rpm):
-    global maxRPM
-    return num_to_range(rpm, 0, maxRPM, 0.0, 3.3)
+    return num_to_range(rpm, 0, 4500, 0.0, 3.3)
 
 def readRPM():
     """READ MOTOR RPM"""
@@ -390,12 +387,17 @@ if __name__ == '__main__':
                 # tell dyno to run normal physics
                 dynoMode(0, dynoQueue)
 
-                #sets that shit high
-                goalVoltage = RPMtoVoltage(1000000)
+                #creates a PID controller for the voltage
+                object = KartVoltage()
+                goalRPM = 1000000
+                goalVoltage = RPMtoVoltage(goalRPM)
+                pid = PID(3, 0.01, 0.1, setpoint=goalVoltage)
+                pid.output_limits = (0, 3.3)
 
                 #used to keep track of time
                 startTime = tm.time()
                 lastTime = startTime
+                
                 
                 #used as an initial condition for the brake possible function
                 brakePossibleBool = True
@@ -420,11 +422,19 @@ if __name__ == '__main__':
                     #checks for if we can brake down to where we need to be if not, set the PID setpoint to 0 and holler about it
                     possible = brakePossible(curSegDistance, raceInfo, trackID)
                     if not possible:
-                        pid.setpoint = RPMtoVoltage(raceInfo.RaceArray[trackID + 1].maxRPM)
+                        pid.setpoint = 0
                         brakePossibleBool = False
 
                         # tell the dyno to run full brakes
                         dynoMode(1, dynoQueue)
+                    elif possible:
+                        #if it becomes possible to brake down to where we need to be, set the setpoint to the goal voltage
+                        """TODO: check if this fixes the problem with the brakes working a little too well
+                        this will either very okay and good or very very bad"""
+                        
+                        brakePossibleBool = True
+                        pid.setpoint = goalVoltage
+                        dynoMode(0, dynoQueue)
                     
                     #if we could brake down to where we need to be then we do not need to brake
                     if brakePossibleBool is True:
