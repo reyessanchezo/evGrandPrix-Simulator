@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+import time
 
 def createNewRacelogFilename(directory="logs"):
     # Get all files in the directory
@@ -56,7 +57,29 @@ def appendToLog(message, directory="logs"):
             f.write('\n')
         f.write(message)
 
+
+def readTach():
+    """READ Tachometer"""
+    return 0
+
+def readRPM():
+    """READ MOTOR RPM"""
+    return 0
+
 createNewRacelogFile()        
 for i in range(1000):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    appendToLog(f"Timestamp: {timestamp}, Race instructions: Straight (Full Throttle), Torque: 10, RPM: 1000, Voltage: 3.4, Power: 10000, Last Lap Time: 125.3, Current Lap: 5, Total Laps: 50, Current Segment: 2, Distance into Segment: 5.345, Odometer: 123456, Brake Possible: True, PID Setpoint: 1000000")
+    mph = 0
+    kph = 0
+    TORQS = 0
+    outVoltage = 0
+    G_RPM = 0
+    lapTime = 0
+    curLap = 0
+    NUM_LAPS = 0
+    segtime = 0
+    trackID = 0
+    curSegDistance = 0
+    brakePossibleBool = 0
+    setpoint = 0
+    appendToLog(f'{timestamp}, {time.time()}, Straight(Full Throttle), {mph}, {kph}, {TORQS}, {outVoltage}, {G_RPM * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {curSegDistance}, {readTach()}, {brakePossibleBool}, {setpoint}, {readRPM()}, --')

@@ -32,7 +32,7 @@ TRANSMISSION_EFFICIENCY = 0.9  # not a perfect number
 MOTORTORQUE = 5.5  ##Nm 
 
 #race parameters
-NUM_LAPS = 5
+NUM_LAPS = 2
 POLLING_RATE = 0.03
 
 #torque sensor variables
@@ -300,7 +300,7 @@ if __name__ == '__main__':
     
     #initiates a new race log file
     createNewRacelogFile()
-    appendToLog = f"Timestamp, Time, Race instructions, mph, kph, Torque, Voltage, Power, Last Lap Time, Current Lap, Total Laps, Last Segment Time, Current Segment, Distance into Segment, Tachometer, Brake Possible, PID Setpoint, Current RPM, Expected RPM"
+    appendToLog(f"Timestamp, Time, Race instructions, mph, kph, Torque, Voltage, Power, Last Lap Time, Current Lap, Total Laps, Last Segment Time, Current Segment, Distance into Segment, Tachometer, Brake Possible, PID Setpoint, Current RPM, Expected RPM")
     
     
     
@@ -439,7 +439,10 @@ if __name__ == '__main__':
 
                         #logging stuff
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        appendToLog(f"{timestamp}, {time.time()}, Straight(Full Throttle), {mph}, {kph}, {TORQS}, {outVoltage}, {G_RPM * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {currSegDistance}, {readTach}, {brakePossibleBool}, {pid.setpoint}, {readRPM}, --")
+                        tach = readTach()
+                        rpm = readRPM()
+                        appendToLog(f'{timestamp}, {time.time()}, Straight(Full Throttle), {mph}, {kph}, {TORQS}, {outVoltage}, {readRPM() * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {curSegDistance}, {tach}, {brakePossibleBool}, {pid.setpoint}, {rpm}, --')
+                        #tqdm.write(f'{timestamp}, {time.time()}, Straight(Full Throttle), {mph}, {kph}, {TORQS}, {outVoltage}, {readRPM() * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {curSegDistance}, {tach}, {brakePossibleBool}, {pid.setpoint}, {rpm}, --')
                     
                     #if we could not brake down to where we need to be then we brake (it will catch this on the first hit)
                     elif brakePossibleBool is not True:
@@ -449,7 +452,7 @@ if __name__ == '__main__':
                         
                         #logging stuff
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        appendToLog(f"{timestamp}, {time.time()}, Straight(Full Brake), {mph}, {kph}, {TORQS}, {outVoltage}, {G_RPM * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {currSegDistance}, {readTach}, {brakePossibleBool}, {pid.setpoint}, {readRPM}, --")
+                        appendToLog(f'{timestamp}, {time.time()}, Straight(Full Brake), {mph}, {kph}, {TORQS}, {outVoltage}, {readRPM() * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {curSegDistance}, {readTach()}, {brakePossibleBool}, {pid.setpoint}, {readRPM()}, --')
                     
                     #generates the voltage for the kart
                     outVoltage = object.current
@@ -507,7 +510,7 @@ if __name__ == '__main__':
                     
                     #logging stuff
                     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    appendToLog(f"{timestamp}, {time.time()}, Turn, {mph}, {kph}, {TORQS}, {outVoltage}, {G_RPM * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {currSegDistance}, {readTach}, {brakePossibleBool}, {pid.setpoint}, {readRPM}, {seg.maxRPM}")
+                    appendToLog(f'{timestamp}, {time.time()}, Turn, {mph}, {kph}, {TORQS}, {outVoltage}, {readRPM() * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {curSegDistance}, {readTach()}, {brakePossibleBool}, {pid.setpoint}, {readRPM()}, {seg.maxRPM}')
                     
                     if trackID != origionalTrackID:
                         break
