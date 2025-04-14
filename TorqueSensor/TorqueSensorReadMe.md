@@ -10,4 +10,16 @@ This program serves as the bridge between the main program and torque sensor. It
 
 ## OLD
 
-This folder contains test programs that were used in the development of the communication between the Serial Artemis Nano and the RS-485 
+This folder contains test programs that were used in the development of the communication between the Serial Artemis Nano and the RS-485 Torque sensor.
+
+### Arduino Main
+
+Arduino Main is essentially an older version of ArtemisMain, though designed for an Arduino Nano. We switched to Artemis because it includes 2 UARTs and several other advanced features. 
+
+### ExampleArduinoRS485Serial
+
+This was an initial test to validate that an Arduino could communicate with an RS-485 device using a converter.
+
+### ModbusTest
+
+This was the first successful test of ModBus over Serial.
