@@ -14,7 +14,7 @@ This folder contains test programs that were used in the development of the comm
 
 ### Arduino Main
 
-Arduino Main is essentially an older version of ArtemisMain, though designed for an Arduino Nano. We switched to Artemis because it includes 2 UARTs and several other advanced features. 
+Arduino Main is essentially an older version of ArtemisMain, though designed for an Arduino Nano. We switched to Artemis because it includes 2 UARTs and several other advanced features.
 
 ### ExampleArduinoRS485Serial
 
