@@ -32,7 +32,7 @@ TRANSMISSION_EFFICIENCY = 0.9  # not a perfect number
 MOTORTORQUE = 5.5  ##Nm 
 
 #race parameters
-NUM_LAPS = 1
+NUM_LAPS = 5
 POLLING_RATE = 0.03
 
 #torque sensor variables
@@ -300,6 +300,9 @@ if __name__ == '__main__':
     
     #initiates a new race log file
     createNewRacelogFile()
+    appendToLog = f"Timestamp, Time, Race instructions, mph, kph, Torque, Voltage, Power, Last Lap Time, Current Lap, Total Laps, Last Segment Time, Current Segment, Distance into Segment, Tachometer, Brake Possible, PID Setpoint, Current RPM, Expected RPM"
+    
+    
     
     print(raceInfo)
     print(f'Number of laps: {NUM_LAPS}')
@@ -334,7 +337,7 @@ if __name__ == '__main__':
     #used to initiate tqdm progress bar
     tqdmDistanceThread = Thread(
         target=tqdmDistanceLoop,
-        args=(float(raceInfo.totalLength)),
+        args=(float(raceInfo.totalLength), ),
         daemon=False #it does not work if it is a daemon, but it naturally stops when the program ends. unsure if this is a problem but i added a timeout to the function
     )
 
@@ -418,35 +421,35 @@ if __name__ == '__main__':
                     power = pid(currentVoltage)
                     currentVoltage = object.update(power, dt)
                     
+                    #checks for if we can brake down to where we need to be if not, set the PID setpoint to 0 and holler about it
+                    if not brakePossible(curSegDistance, raceInfo, trackID):
+                        pid.setpoint = RPMtoVoltage(raceInfo.RaceArray[trackID + 1].maxRPM)
+                        brakePossibleBool = False
+
+                        # tell the dyno to run full brakes
+                        dynoMode(1, dynoQueue)
+                    
                     #if we could brake down to where we need to be then we do not need to brake
                     if brakePossibleBool is True:
                         mph = RPMtoMPH(readRPM())
                         kph = RPMtoKPH(readRPM())
-                        tqdm.write(f'(FULL THROTTLE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {curSegDistance}, Speed: {mph} mph, {kph} kph')
+                        tqdm.write(f'(FULL THROTTLE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {round(curSegDistance, 3)}, Speed: {round(mph, 3)} mph, {round(kph, 3)} kph')
                         
                         dynoMode(0, dynoQueue)
 
                         #logging stuff
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        appendToLog(f"Timestamp: {timestamp}, Race instructions: Straight (Full Throttle), Speed: {mph} mph, {kph} kph, Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Last Segment Time: {segtime}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Tachometer: {G_TACH}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}")
+                        appendToLog(f"{timestamp}, {time.time()}, Straight(Full Throttle), {mph}, {kph}, {TORQS}, {outVoltage}, {G_RPM * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {currSegDistance}, {readTach}, {brakePossibleBool}, {pid.setpoint}, {readRPM}, --")
                     
                     #if we could not brake down to where we need to be then we brake (it will catch this on the first hit)
                     elif brakePossibleBool is not True:
                         mph = RPMtoMPH(readRPM())
                         kph = RPMtoKPH(readRPM())
-                        tqdm.write(f'(FULL BRAKE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {curSegDistance}, Speed: {mph} mph, {kph} kph')
+                        tqdm.write(f'(FULL BRAKE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {round(curSegDistance, 3)}, Speed: {round(mph, 3)} mph, {round(kph, 3)} kph')
                         
                         #logging stuff
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        appendToLog(f"Timestamp: {timestamp}, Race instructions: Straight (Full Brake), Speed: {mph} mph, {kph} kph, Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Last Segment Time: {segtime}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, Tachometer: {G_TACH}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}")
-                    
-                    #checks for if we can brake down to where we need to be if not, set the PID setpoint to 0 and holler about it
-                    if not brakePossible(curSegDistance, raceInfo, trackID):
-                        pid.setpoint = 0
-                        brakePossibleBool = False
-
-                        # tell the dyno to run full brakes
-                        dynoMode(1, dynoQueue)
+                        appendToLog(f"{timestamp}, {time.time()}, Straight(Full Brake), {mph}, {kph}, {TORQS}, {outVoltage}, {G_RPM * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {currSegDistance}, {readTach}, {brakePossibleBool}, {pid.setpoint}, {readRPM}, --")
                     
                     #generates the voltage for the kart
                     outVoltage = object.current
@@ -491,11 +494,20 @@ if __name__ == '__main__':
                     mph = RPMtoMPH(readRPM())
                     kph = RPMtoKPH(readRPM())
                     #print(f'THROTTLE: {currentVoltage * 20}%, Race segment: {trackID}, Distance into segment: {curSegDistance}')
-                    tqdm.write(f'THROTTLE: {num_to_range(currentVoltage, 0, 3.3, 0, 100)}%, Race instructions: Turn, Race segment: {trackID}, Distance into segment: {curSegDistance}, Current RPM: {ReadRPM()}, Speed: {mph} mph, {kph} kph, Expected RPM: {seg.maxRPM}')
+                    
+                    throttle = ''
+                    if G_RPM > seg.maxRPM:
+                        throttle = 'Less Throttle'
+                    elif G_RPM < seg.maxRPM:
+                        throttle = 'More Throttle'
+                    elif G_RPM == seg.maxRPM:
+                        throttle = 'Ideal Throttle'
+                    
+                    tqdm.write(f'THROTTLE: {throttle}%, Race instructions: Turn, Race segment: {trackID}, Distance into segment: {round(curSegDistance, 3)}, Current RPM: {ReadRPM()}, Speed: {round(mph, 3)} mph, {round(kph, 3)} kph, Expected RPM: {round(seg.maxRPM, 3)}')
                     
                     #logging stuff
                     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    appendToLog(f"Timestamp: {timestamp}, Race instructions: Turn, Torque: {TORQS}, RPM: {G_RPM}, Voltage: {outVoltage}, Power: {G_RPM * TORQS}, Last Lap Time:{lapTime}, Current Lap: {curLap}, Total Laps: {NUM_LAPS}, Last Segment Time: {segtime}, Current Segment: {trackID}, Distance into Segment: {curSegDistance}, tachometer: {readTach}, Brake Possible: {brakePossibleBool}, PID Setpoint: {pid.setpoint}, Current RPM: {readRPM()}, Speed: {mph} mph, {kph} kph, Expected RPM: {seg.maxRPM}")
+                    appendToLog(f"{timestamp}, {time.time()}, Turn, {mph}, {kph}, {TORQS}, {outVoltage}, {G_RPM * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {currSegDistance}, {readTach}, {brakePossibleBool}, {pid.setpoint}, {readRPM}, {seg.maxRPM}")
                     
                     if trackID != origionalTrackID:
                         break
