@@ -8,6 +8,10 @@ ArtemisMain contains the project file to upload to an Artemis Nano. This folder 
 
 This program serves as the bridge between the main program and torque sensor. It has additional functionality, including Serial communication to output a throttle signal (0-3.3V).
 
+Check out the linked article for addition details on uploading arduino files to the Artemis Nano microcontroller.
+
+[Artemis Development with the Arduino IDE]
+
 ## OLD
 
 This folder contains test programs that were used in the development of the communication between the Serial Artemis Nano and the RS-485 Torque sensor.
@@ -23,3 +27,6 @@ This was an initial test to validate that an Arduino could communicate with an R
 ### ModbusTest
 
 This was the first successful test of ModBus over Serial.
+
+
+[Artemis Development with the Arduino IDE]: https://learn.sparkfun.com/tutorials/artemis-development-with-the-arduino-ide/setting-up-the-arduino-ide
