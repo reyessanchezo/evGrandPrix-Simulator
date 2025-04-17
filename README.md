@@ -1,6 +1,3 @@
-<!-- TODO: Add instructions to activate venv in Windows -->
-<!-- TODO: Update requirements.txt so pip install . sets up everything. -->
-
 # evGrandPrix-Simulator
 
 This repository contains documentation and files supporting the R. B. Annis evGrandPrix Simulator project. The team behind this project aims to design, develop, and prototype an platform that emulates the stresses of a gokart racing around a track. This is to be done using only the powertrain for the kart (motor, batteries, controllers, etc) to ensure that the components will endure the race.
@@ -31,22 +28,18 @@ Follow these steps to set up your environment:
      source venv/bin/activate
      ```
 
+   - On Windows:
+
+     ```
+     venv/Scripts/activate.bat //In CMD
+     venv/Scripts/Activate.ps1 //In Powershel
+     ```
+
 4. Install the required dependencies:
 
    ```bash
    pip install -r requirements.txt
    ```
 
-(OPTIONAL)
-
-If using conda:
-
-2. Create new conda environment
-```bash
-conda env create -f environment.yml
-```
-
-3. Activate conda environment
-```bash
-conda activate pyvesc
-```
+# File Structure
+This repository is divided in 3 sections: `Dyno`, `Kart`, `TorqueSensor`. Each of them include the code controlling that specific subsytem. 

@@ -1,3 +1,5 @@
+.vscode/
+.idea/
 venv/
 __pycache__/
 docs/
@@ -9,4 +11,3 @@ pyvesc.egg-info/
 *.log
 
 .DS_Store
-.idea

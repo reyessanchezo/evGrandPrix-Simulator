@@ -17,13 +17,14 @@ This directory contains all files related to the dyno, including the scripts and
 To run the Python scripts, install the following libraries:
 
 - `matplotlib`
-- `pyusb`
+- `pyserial`
 - `python-can`
+- `pyusb`
 
 You can install them using `pip`:
 
 ```bash
-pip install matplotlib pyusb python-can
+pip install matplotlib pyserial pyusb python-can
 ```
 
 ### Lisp
