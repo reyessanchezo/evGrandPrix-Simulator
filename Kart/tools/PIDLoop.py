@@ -2,6 +2,10 @@ import time
 import matplotlib.pyplot as plt
 from simple_pid import PID
 
+MAX_VOLTAGE = 3.3
+MAX_MOTOR_RPM = 4500
+POLLING_RATE = 0.1
+
 class KartVoltage:
     def __init__(self):
         self.current = 0 #volts
@@ -19,23 +23,26 @@ def num_to_range(num, inMin, inMax, outMin, outMax):
   return outMin + (float(num - inMin) / float(inMax - inMin) * (outMax - outMin))
 
 def RPMtoVoltage(rpm):
-    return num_to_range(rpm, 0, 4500, 0.9, 4.1)
+    return num_to_range(rpm, 0, MAX_MOTOR_RPM, 0.0, MAX_VOLTAGE)
 
 def PIDInit(reach_rpm : int, ):
     object = KartVoltage()
 
-    currentRPM = object.current
+    currentRPM = 1000
     currentVoltage = RPMtoVoltage(currentRPM)
+    object.current = currentVoltage
     #print(f'CURRENT VOLTAGE {currentVoltage}')
 
-    goalRPM = 1000
+    goalRPM = 2000
+    
+    #i dont think this is working.
     goalVoltage = RPMtoVoltage(goalRPM)
     #print(f'GOAL VOLTAGE: {goalVoltage}')
 
     #print(f'Second GOAL VOLTAGE: {RPMtoVoltage(2500)}')
 
     pid = PID(3, 0.01, 0.1, setpoint=goalVoltage)
-    pid.output_limits = (0, 5)
+    pid.output_limits = (0, MAX_VOLTAGE)
 
     startTime = time.time()
     lastTime = startTime
@@ -47,9 +54,9 @@ def PIDInit(reach_rpm : int, ):
         power = pid(currentVoltage)
         #print('POWER: ', power)
         currentVoltage = object.update(power, dt)
-        #print('CURRENT: ', currentVoltage)
-
-        #
+        print('CURRENT: ', currentVoltage)
 
         lastTime = time.time()
-        time.sleep(abs(0.1 - (lastTime - currentTme)))
+        time.sleep(abs(POLLING_RATE - (lastTime - currentTme)))
+        
+PIDInit(1000)

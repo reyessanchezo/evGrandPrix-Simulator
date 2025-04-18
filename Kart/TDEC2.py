@@ -30,6 +30,8 @@ TIRE_PRESSURE = 1.0  # Tire pressure (barr)
 TRANSMISSION_EFFICIENCY = 0.9  # not a perfect number
 
 MOTORTORQUE = 5.5  ##Nm 
+MAX_MOTOR_RPM = 5500 #rpm
+MAX_VOLTAGE = 3.3
 
 #race parameters
 NUM_LAPS = 2
@@ -50,9 +52,10 @@ class RaceSeg:
         if turnRadius > 0:
             self.calcMaxSpeed(turnRadius)
         else:
-            self.maxSpeed = 4500 * (1 / 60) * (1 / (TIRE_DIAMETER * math.pi))
-            self.maxRPM = 4500
+            self.maxSpeed = MAX_MOTOR_RPM * (1 / 60) * (1 / (TIRE_DIAMETER * math.pi))
+            self.maxRPM = MAX_MOTOR_RPM
         
+    """TODO: Check if this math is correct with Jackson's math"""
     def calcMaxSpeed(self, turnRadius):
         self.maxSpeed = math.sqrt(STATICFRICTIONSIDELOADING * GRAV_ACCELLERATION * turnRadius)
         self.maxRPM = self.maxSpeed / (math.pi * TIRE_DIAMETER * GEARING_RATIO) * 60
@@ -106,6 +109,7 @@ def csv_to_raceinfo(directory: str | pathlib.Path) -> RaceInfo:
 
 #Read from kart. Must implement later when functionality is available.
 # From Oscar: Tachometer measures RPM. Odometer measures distance
+"""TODO: Check if this should be 1/60 or if it involves something else"""
 def readTach():
     """READ Tachometer"""
     global G_TACH
@@ -137,6 +141,7 @@ def rpm_to_motorspeed(rpm):
 def velocity(motorspeed):  ##probable inputs
     return GEARING_RATIO * rpm_to_motorspeed(motorspeed) * TIRE_DIAMETER * math.pi
 
+"""TODO: Check if this math is correct with Jackson's math"""
 #used for finding the maximum acceleration the kart could do at given motorspeed
 def max_acceleration (motor_speed):
     kartMaxForce = (2 * MOTORTORQUE * GEARING_RATIO * TRANSMISSION_EFFICIENCY) / (MASS * TIRE_DIAMETER)
@@ -149,12 +154,14 @@ def max_acceleration (motor_speed):
     else:
         return kartMaxForce - chunk2 - chunk3
 
+"""TODO: Check if this math is correct with Jackson's math"""
 #used for finding the maximum braking the kart could do at given motorspeed
 def max_braking(motor_speed):
     kartBreakAwayForce = 0.99 * GRAV_ACCELLERATION * STATICFRICTION
     ##chunk3 = 0.005 + (1 / TIRE_PRESSURE) * (0.01 + 0.0095 * ((3.6 * velocity(motor_speed)) / 100) ** 2) * GRAV_ACCELLERATION
     return (-1 * kartBreakAwayForce) #- chunk2 - chunk3
 
+"""TODO: Check if this math is correct with Jackson's math"""
 #used to find if the kart can brake at the current distance into a straight segment of the track
 def brakePossible(curSegDistance, raceinfo, trackID) -> bool:
     if trackID == len(raceInfo.RaceArray):
@@ -174,8 +181,9 @@ def brakePossible(curSegDistance, raceinfo, trackID) -> bool:
 def num_to_range(num, inMin, inMax, outMin, outMax):
   return outMin + (float(num - inMin) / float(inMax - inMin) * (outMax - outMin))
 
+"""TODO: can we assuem this is correct or does this need to be changed"""
 def RPMtoVoltage(rpm):
-    return num_to_range(rpm, 0, 4500, 0.0, 3.3)
+    return num_to_range(rpm, 0, MAX_MOTOR_RPM, 0.0, MAX_VOLTAGE)
 
 def readRPM():
     """READ MOTOR RPM"""
@@ -191,7 +199,7 @@ def sendVoltage(voltage, vq):
     global G_V
     
     # For TDEC2, we are keeping below 2V due a concern over ratings that needs to be checked.
-    voltage = clamp(round(voltage, 1), 0, 3.3)
+    voltage = clamp(round(voltage, 1), 0, MAX_VOLTAGE)
     vq.put(voltage)
     return
 
@@ -265,6 +273,7 @@ def tqdmDistanceLoop(raceLength) -> None:
         curTime = tm.time()
         time.sleep(0.1)
 
+"""TODO: Double check the speed math"""
 def RPMtoMPH(rpm):
     rpm = rpm * GEARING_RATIO
     speed = rpm * (math.pi * TIRE_DIAMETER) / 60
@@ -389,10 +398,11 @@ if __name__ == '__main__':
 
                 #creates a PID controller for the voltage
                 object = KartVoltage()
+                object.current = currentVoltage
                 goalRPM = 1000000
                 goalVoltage = RPMtoVoltage(goalRPM)
                 pid = PID(3, 0.01, 0.1, setpoint=goalVoltage)
-                pid.output_limits = (0, 3.3)
+                pid.output_limits = (0, MAX_VOLTAGE)
 
                 #used to keep track of time
                 startTime = tm.time()
@@ -423,6 +433,7 @@ if __name__ == '__main__':
                     
                     #checks for if we can brake down to where we need to be if not, set the PID setpoint to 0 and holler about it
                     if not brakePossible(curSegDistance, raceInfo, trackID):
+                        """TODO: If we cant use PID for straight away, then how can we guarantee that it will reach next segment?"""
                         pid.setpoint = RPMtoVoltage(raceInfo.RaceArray[trackID + 1].maxRPM)
                         brakePossibleBool = False
 
@@ -480,10 +491,11 @@ if __name__ == '__main__':
                 
                 #creates a PID controller for the voltage
                 object = KartVoltage()
+                object.current = currentVoltage
                 goalRPM = seg.maxRPM
                 goalVoltage = RPMtoVoltage(goalRPM)
                 pid = PID(3, 0.01, 0.1, setpoint=goalVoltage)
-                pid.output_limits = (0, 3.3)
+                pid.output_limits = (0, MAX_VOLTAGE)
 
                 startTime = tm.time()
                 lastTime = startTime
