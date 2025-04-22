@@ -15,7 +15,7 @@
 (define prev-v 0.0)
 (define print-output "")
 (define queue-size 10)
-(define response-rate 0.001)
+(define response-rate 0.0001)
 
 ;; 03 -- List (Queue) functions
 (define make-list
