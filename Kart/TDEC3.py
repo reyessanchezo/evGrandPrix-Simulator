@@ -387,7 +387,7 @@ if __name__ == '__main__':
             segstart = tm.time()
             if seg.turnRadius < 0:
                 #straight away
-                tqdm.write("Kart in straight away")
+                tqdm.write("Kart in straightaway")
                 
                 #outVoltage = None
                 straight_speed = MAX_MOTOR_RPM
