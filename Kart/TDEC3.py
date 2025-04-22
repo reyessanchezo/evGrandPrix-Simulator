@@ -430,7 +430,9 @@ if __name__ == '__main__':
                     if not brakePossible(curSegDistance, raceInfo, trackID):
                         """TODO: If we cant use PID for straight away, then how can we guarantee that it will reach next segment?"""
                         brakePossibleBool = False
-
+                        
+                        # stop the throttle
+                        straight_speed = 0
                         # tell the dyno to run full brakes
                         dynoMode(1, dynoQueue)
                     
@@ -440,6 +442,7 @@ if __name__ == '__main__':
                         kph = RPMtoKPH(readRPM())
                         tqdm.write(f'(FULL THROTTLE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {round(curSegDistance, 3)}, Speed: {round(mph, 3)} mph, {round(kph, 3)} kph')
                         
+                        straight_speed = MAX_MOTOR_RPM
                         dynoMode(0, dynoQueue)
 
                         #logging stuff
@@ -455,16 +458,13 @@ if __name__ == '__main__':
                         kph = RPMtoKPH(readRPM())
                         tqdm.write(f'(FULL BRAKE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {round(curSegDistance, 3)}, Speed: {round(mph, 3)} mph, {round(kph, 3)} kph')
 
-                        # stop the throttle
-                        straight_speed = 0
-
                         #logging stuff
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         appendToLog(f'{timestamp}, {time.time()}, Straight(Full Brake), {mph}, {kph}, {TORQS}, {outVoltage}, {readRPM() * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {curSegDistance}, {readTach()}, {brakePossibleBool}, {pid.setpoint}, {readRPM()}, --')
                     
                     #print(f'Out Voltage For Straight Away: {outVoltage}')
                     
-                    if (readRPM() < MAX_MOTOR_RPM * 0.05):
+                    if (readRPM() < (MAX_MOTOR_RPM * 0.05)):
                         straight_speed = MAX_MOTOR_RPM * 0.05
 
                     #used to send voltage to arduino
