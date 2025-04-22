@@ -86,7 +86,7 @@ def PIDRPMInit(reach_rpm : int, ):
         power = pid(currentRPM)
         currentRPM = object.update(power, dt)
         #print('POWER: ', power)
-        print('CURRENT: ', currentRPM)
+        print('CURRENT RPM: ', currentRPM)
 
         lastTime = time.time()
         time.sleep(abs(POLLING_RATE - (lastTime - currentTme)))
