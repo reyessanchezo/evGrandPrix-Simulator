@@ -72,8 +72,12 @@ void loop() {
     pulseCount = 0;
     actualInterval = currentMillis - previousMillis;
     previousMillis = currentMillis;  
-    rpm = (count * 1000 * 60 ) / actualInterval / pulsesPerRevolution;
-    
+    rpm = count*10; 
+    /*
+    pulse*(1 revolution)*(1 interval)*(1000 millis)*(60 sec)      rpm
+    -------------------------------------------------------- = 20 ----
+    interval*(60 pulses)*(50 millis)*(1 sec)*(1 min)              min
+    */
     Serial.println(
       String(rpm) + "\t" + 
       String(totalCount) + "\t" + 
