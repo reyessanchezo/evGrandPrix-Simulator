@@ -108,7 +108,7 @@
         (if (not-eq print-output "")
           (print print-output)
         )
-        (sleep 0.5)
+        (sleep 0.1)
         (print-stats)
    )
 )
