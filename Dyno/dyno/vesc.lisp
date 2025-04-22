@@ -14,7 +14,7 @@
 (define +pi+ 3.14159)
 (define prev-v 0.0)
 (define print-output "")
-(define queue-size 1)
+(define queue-size 10)
 (define response-rate 0.001)
 
 ;; 03 -- List (Queue) functions
@@ -90,7 +90,7 @@
           (term2 (/ (* *C_d* *A* *rho* (* v v)) 2))
           (term3 (* *m* dvdt))
           (term4 (+ term1 term2 term3))
-          (result (* term4 1)))  ;; Correctly defining `result`
+          (result (* term4 v)))  ;; Correctly defining `result`
       result)))  ;; Returning `result`
 
 ;; 07 -- Rate of change of velocity
