@@ -10,7 +10,7 @@
 (define *mu_s* 0.5416306095) ; Static Friction coefficient
 
 ;; 02 -- User defined variables
-(define can-flag 0) ;; 0: Turn, 1: Straight
+(define can-flag 1) ;; 0: Decelerate, 1: ForceEmulation
 (define +pi+ 3.14159)
 (define prev-v 0.0)
 (define print-output "")
@@ -73,7 +73,7 @@
 (defun rpm-to-rps (rpm)
   (/ rpm 60))
 
-;; RPM to M/S^2
+;; RPM to M/S
 (defun rpm-to-v (rpm)
   (let ((rps (rpm-to-rps rpm)))
     (* *Gr* rps +pi+ *D_t*)))
