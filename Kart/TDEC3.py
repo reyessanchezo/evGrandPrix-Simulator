@@ -311,9 +311,11 @@ if __name__ == '__main__':
     #translates csv file into our custom classes
     raceInfo = csv_to_raceinfo("tdec_track.csv")
     
+    handHoldingFlag = False
+    
     #initiates a new race log file
     createNewRacelogFile()
-    appendToLog(f"Timestamp, Time, Race instructions, mph, kph, Torque, Voltage, Power, Last Lap Time, Current Lap, Total Laps, Last Segment Time, Current Segment, Distance into Segment, Tachometer, Brake Possible, PID Setpoint, Current RPM, Expected RPM")
+    appendToLog(f"Timestamp, Time, Race instructions, mph, kph, Torque, Handholding, Power, Last Lap Time, Current Lap, Total Laps, Last Segment Time, Current Segment, Distance into Segment, Tachometer, Brake Possible, PID Setpoint, Current RPM, Expected RPM")
     
     
     
@@ -449,7 +451,7 @@ if __name__ == '__main__':
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         tach = readTach()
                         rpm = readRPM()
-                        appendToLog(f'{timestamp}, {time.time()}, Straight(Full Throttle), {mph}, {kph}, {TORQS}, {outVoltage}, {readRPM() * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {curSegDistance}, {tach}, {brakePossibleBool}, {pid.setpoint}, {rpm}, --')
+                        appendToLog(f'{timestamp}, {time.time()}, Straight(Full Throttle), {mph}, {kph}, {TORQS}, {handHoldingFlag}, {readRPM() * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {curSegDistance}, {tach}, {brakePossibleBool}, {pid.setpoint}, {rpm}, --')
                         #tqdm.write(f'{timestamp}, {time.time()}, Straight(Full Throttle), {mph}, {kph}, {TORQS}, {outVoltage}, {readRPM() * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {curSegDistance}, {tach}, {brakePossibleBool}, {pid.setpoint}, {rpm}, --')
                     
                     #if we could not brake down to where we need to be then we brake (it will catch this on the first hit)
@@ -460,12 +462,15 @@ if __name__ == '__main__':
 
                         #logging stuff
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        appendToLog(f'{timestamp}, {time.time()}, Straight(Full Brake), {mph}, {kph}, {TORQS}, {outVoltage}, {readRPM() * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {curSegDistance}, {readTach()}, {brakePossibleBool}, {pid.setpoint}, {readRPM()}, --')
+                        appendToLog(f'{timestamp}, {time.time()}, Straight(Full Brake), {mph}, {kph}, {TORQS}, {handHoldingFlag}, {readRPM() * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {curSegDistance}, {readTach()}, {brakePossibleBool}, {pid.setpoint}, {readRPM()}, --')
                     
                     #print(f'Out Voltage For Straight Away: {outVoltage}')
                     
                     if (readRPM() < (MAX_MOTOR_RPM * 0.05)):
                         straight_speed = MAX_MOTOR_RPM * 0.05
+                        handHoldingFlag = True
+                    else:
+                        handHoldingFlag = False
 
                     #used to send voltage to arduino
                     sendRPM(straight_speed, sendQueue)
@@ -523,7 +528,7 @@ if __name__ == '__main__':
                     
                     #logging stuff
                     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    appendToLog(f'{timestamp}, {time.time()}, Turn, {mph}, {kph}, {TORQS}, {outVoltage}, {readRPM() * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {curSegDistance}, {readTach()}, {brakePossibleBool}, {pid.setpoint}, {readRPM()}, {seg.maxRPM}')
+                    appendToLog(f'{timestamp}, {time.time()}, Turn, {mph}, {kph}, {TORQS}, {handHoldingFlag}, {readRPM() * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {curSegDistance}, {readTach()}, {brakePossibleBool}, {pid.setpoint}, {readRPM()}, {seg.maxRPM}')
                     
                     if trackID != origionalTrackID:
                         break
