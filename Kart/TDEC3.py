@@ -390,6 +390,7 @@ if __name__ == '__main__':
                 tqdm.write("Kart in straight away")
                 
                 #outVoltage = None
+                straight_speed = MAX_MOTOR_RPM
 
                 tacometer_cur_distance = readTach()
                 curSegDistance, origionalTrackID = tachTranslator(raceInfo, tacometer_cur_distance)
@@ -398,13 +399,6 @@ if __name__ == '__main__':
 
                 # tell dyno to run normal physics
                 dynoMode(0, dynoQueue)
-
-                #creates a PID controller for the voltage
-                object = KartRPM()
-                object.current = currentRPM
-                goalRPM = 100000000
-                pid = PID(3, 0.01, 0.1, setpoint=goalRPM)
-                pid.output_limits = (0, MAX_MOTOR_RPM)
 
                 #used to keep track of time
                 startTime = tm.time()
@@ -431,13 +425,10 @@ if __name__ == '__main__':
                     segtime = currentTme
                     
                     dt = currentTme - lastTime
-                    power = pid(currentRPM)
-                    currentRPM = object.update(power, dt)
                     
                     #checks for if we can brake down to where we need to be if not, set the PID setpoint to 0 and holler about it
                     if not brakePossible(curSegDistance, raceInfo, trackID):
                         """TODO: If we cant use PID for straight away, then how can we guarantee that it will reach next segment?"""
-                        pid.setpoint = 0
                         brakePossibleBool = False
 
                         # tell the dyno to run full brakes
@@ -463,17 +454,21 @@ if __name__ == '__main__':
                         mph = RPMtoMPH(readRPM())
                         kph = RPMtoKPH(readRPM())
                         tqdm.write(f'(FULL BRAKE), Race instructions: Straight, Race segment: {trackID}, Distance into segment: {round(curSegDistance, 3)}, Speed: {round(mph, 3)} mph, {round(kph, 3)} kph')
-                        
+
+                        # stop the throttle
+                        straight_speed = 0
+
                         #logging stuff
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         appendToLog(f'{timestamp}, {time.time()}, Straight(Full Brake), {mph}, {kph}, {TORQS}, {outVoltage}, {readRPM() * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {curSegDistance}, {readTach()}, {brakePossibleBool}, {pid.setpoint}, {readRPM()}, --')
                     
-                    #generates the voltage for the kart
-                    outRPM = object.current
                     #print(f'Out Voltage For Straight Away: {outVoltage}')
                     
+                    if (readRPM() < MAX_MOTOR_RPM * 0.05):
+                        straight_speed = MAX_MOTOR_RPM * 0.05
+
                     #used to send voltage to arduino
-                    sendRPM(outRPM, sendQueue)
+                    sendRPM(straight_speed, sendQueue)
 
                     lastTime = tm.time()
                     tm.sleep(abs(POLLING_RATE - (lastTime - currentTme)))
