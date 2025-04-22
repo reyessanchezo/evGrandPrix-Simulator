@@ -495,8 +495,8 @@ if __name__ == '__main__':
                 object = KartRPM()
                 object.current = currentRPM
                 goalRPM = seg.maxRPM
-                pid = PID(3, 0.01, 0.1, setpoint=goalRPM)
-                pid.output_limits = (0, MAX_MOTOR_RPM)
+                pid = PID(0.004, 0.004, 0.0001, setpoint=goalRPM)
+                pid.output_limits = (MAX_MOTOR_RPM*0.05, MAX_MOTOR_RPM)
 
                 startTime = tm.time()
                 lastTime = startTime
