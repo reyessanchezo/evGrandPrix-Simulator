@@ -59,4 +59,37 @@ def PIDInit(reach_rpm : int, ):
         lastTime = time.time()
         time.sleep(abs(POLLING_RATE - (lastTime - currentTme)))
         
-PIDInit(1000)
+def PIDRPMInit(reach_rpm : int, ):
+    object = KartVoltage()
+
+    currentRPM = 1000
+    object.current = currentRPM
+    #print(f'CURRENT VOLTAGE {currentVoltage}')
+
+    goalRPM = reach_rpm
+    
+    #i dont think this is working.
+    #print(f'GOAL VOLTAGE: {goalVoltage}')
+
+    #print(f'Second GOAL VOLTAGE: {RPMtoVoltage(2500)}')
+
+    pid = PID(5, 0.01, 0.1, setpoint=goalRPM)
+    pid.output_limits = (0, MAX_MOTOR_RPM)
+
+    startTime = time.time()
+    lastTime = startTime
+
+    while time.time() - startTime < 10:
+        currentTme = time.time()
+        dt = currentTme - lastTime
+        #print(f'DT: {dt}')
+        power = pid(currentRPM)
+        currentRPM = object.update(power, dt)
+        #print('POWER: ', power)
+        print('CURRENT: ', currentRPM)
+
+        lastTime = time.time()
+        time.sleep(abs(POLLING_RATE - (lastTime - currentTme)))
+        
+
+PIDRPMInit(3000)

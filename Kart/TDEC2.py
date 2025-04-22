@@ -385,7 +385,7 @@ if __name__ == '__main__':
                 #straight away
                 tqdm.write("Kart in straight away")
                 
-                outVoltage = None
+                #outVoltage = None
 
                 tacometer_cur_distance = readTach()
                 curSegDistance, origionalTrackID = tachTranslator(raceInfo, tacometer_cur_distance)
@@ -468,7 +468,9 @@ if __name__ == '__main__':
                     #generates the voltage for the kart
                     outVoltage = object.current
                     #print(f'Out Voltage For Straight Away: {outVoltage}')
-                    sendVoltage(outVoltage, sendQueue)
+                    
+                    #used to send voltage to arduino
+                    #sendVoltage(outVoltage, sendQueue)
 
                     lastTime = tm.time()
                     tm.sleep(abs(POLLING_RATE - (lastTime - currentTme)))
@@ -511,11 +513,13 @@ if __name__ == '__main__':
                     #print(f'THROTTLE: {currentVoltage * 20}%, Race segment: {trackID}, Distance into segment: {curSegDistance}')
                     
                     throttle = ''
-                    if G_RPM > seg.maxRPM:
+                    
+                    percentageError = 0.1
+                    if G_RPM > (seg.maxRPM * (1 + percentageError)):
                         throttle = 'Less Throttle'
-                    elif G_RPM < seg.maxRPM:
+                    elif G_RPM < (seg.maxRPM * (1 - percentageError)):
                         throttle = 'More Throttle'
-                    elif G_RPM == seg.maxRPM:
+                    elif G_RPM > (seg.maxRPM * (1 - percentageError)) and G_RPM < (seg.maxRPM * (1 + percentageError)):
                         throttle = 'Ideal Throttle'
                     
                     tqdm.write(f'THROTTLE: {throttle}%, Race instructions: Turn, Race segment: {trackID}, Distance into segment: {round(curSegDistance, 3)}, Current RPM: {ReadRPM()}, Speed: {round(mph, 3)} mph, {round(kph, 3)} kph, Expected RPM: {round(seg.maxRPM, 3)}')
@@ -535,7 +539,9 @@ if __name__ == '__main__':
 
                     #print(f'Out Voltage For Turn: {currentVoltage}')
                     #print(f'Current position on turn: {TACTEST}')
-                    sendVoltage(currentVoltage, sendQueue)
+                    
+                    #used to send voltage to arduino
+                    #sendVoltage(currentVoltage, sendQueue)
 
                     lastTime = tm.time()
                     tm.sleep(abs(POLLING_RATE - (lastTime - currentTme)))
