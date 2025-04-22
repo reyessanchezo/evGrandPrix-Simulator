@@ -90,7 +90,7 @@
           (term2 (/ (* *C_d* *A* *rho* (* v v)) 2))
           (term3 (* *m* dvdt))
           (term4 (+ term1 term2 term3))
-          (result (* term4 v)))  ;; Correctly defining `result`
+          (result (* term4 1)))  ;; Correctly defining `result`
       result)))  ;; Returning `result`
 
 ;; 07 -- Rate of change of velocity
@@ -123,7 +123,7 @@
             (if (eq can-flag 0)
                 (let ((rpm (/ (get-rpm) 5.0))
                       (output (str-merge "(TURN) RPM: " (str-from-n rpm)))
-                       (new-rpm (deceleration rpm))) ; TODO
+                       (new-rpm (deceleration rpm))) ;
                     (progn
                         (if (> new-rpm 0)
                             (set-rpm new-rpm)
