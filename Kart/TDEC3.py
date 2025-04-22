@@ -182,8 +182,10 @@ def num_to_range(num, inMin, inMax, outMin, outMax):
 
 """TODO: can we assuem this is correct or does this need to be changed"""
 #UPDATE THIS SHIT DONT WORK
+"""
 def RPMtoVoltage(rpm):
     return num_to_range(rpm, 0, MAX_MOTOR_RPM, 0.0, MAX_VOLTAGE)
+"""
 
 def readRPM():
     """READ MOTOR RPM"""
@@ -427,6 +429,7 @@ if __name__ == '__main__':
 
                     currentTme = tm.time()
                     segtime = currentTme
+                    
                     dt = currentTme - lastTime
                     power = pid(currentRPM)
                     currentRPM = object.update(power, dt)
@@ -504,10 +507,13 @@ if __name__ == '__main__':
                 
                 #runs a loop until the kart leaves the segment
                 while seg.length > curSegDistance and trackID == origionalTrackID:
+                    
+                    currentRPM = readRPM()
+                    
                     tacometer_cur_distance = readTach()
                     curSegDistance, trackID = tachTranslator(raceInfo, tacometer_cur_distance)
-                    mph = RPMtoMPH(readRPM())
-                    kph = RPMtoKPH(readRPM())
+                    mph = RPMtoMPH(currentRPM)
+                    kph = RPMtoKPH(currentRPM)
                     #print(f'THROTTLE: {currentVoltage * 20}%, Race segment: {trackID}, Distance into segment: {curSegDistance}')
                     
                     throttle = ''
@@ -535,8 +541,6 @@ if __name__ == '__main__':
                     power = pid(currentRPM)
                     currentRPM = object.update(power, dt)
 
-                    #print(f'Out Voltage For Turn: {currentVoltage}')
-                    #print(f'Current position on turn: {TACTEST}')
                     
                     #used to send voltage to arduino
                     sendRPM(currentRPM, sendQueue)
