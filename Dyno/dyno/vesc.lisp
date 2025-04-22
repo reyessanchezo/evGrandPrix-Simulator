@@ -7,7 +7,7 @@
 (define *g* 9.8) ; Gravity acceleration constant (m/s^2)
 (define *C_d* 0.8) ; Drag coefficient (unitless)
 (define *A* 0.7) ; Maximum cross-sectional area (m^2)
-(define *mu_s* 0.542) ; Static Friction coefficient
+(define *mu_s* 0.5416306095) ; Static Friction coefficient
 
 ;; 02 -- User defined variables
 (define can-flag 0) ;; 0: Turn, 1: Straight
