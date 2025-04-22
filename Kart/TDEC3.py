@@ -481,8 +481,6 @@ if __name__ == '__main__':
             elif seg.turnRadius > 0:
                 #kart is in turn
                 tqdm.write(f'Kart is in turn')
-                
-                outVoltage = None
 
                 #intializes the several variables
                 tacometer_cur_distance = readTach()
