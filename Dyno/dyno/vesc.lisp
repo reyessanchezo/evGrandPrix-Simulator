@@ -14,8 +14,8 @@
 (define +pi+ 3.14159)
 (define prev-v 0.0)
 (define print-output "")
-(define queue-size 10)
-(define response-rate 0.0001)
+(define queue-size 20)
+(define response-rate 0.001)
 
 ;; 03 -- List (Queue) functions
 (define make-list
