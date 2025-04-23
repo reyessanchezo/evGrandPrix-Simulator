@@ -6,7 +6,7 @@ docs/
 dist/
 pyvesc.egg-info/
 
-*.png
+
 *.jpg
 *.log
 
