@@ -7,9 +7,24 @@ print(f"mylist contains {'a' if len(mylist) == 1 else 'some'} word{'' if len(myl
 exit()
 """
 
+import os
 import pandas as pd
 
-logfile = "raceLog82.log"
+files = []
+tmp = os.listdir(os.path.dirname(os.path.realpath(__file__)))
+for file in tmp:
+    if (file[-4:] == ".log"):
+        files.append(file)
+
+for i in range(len(files)):
+    print(f"{i}: {files[i]}")
+
+opt = -1
+while opt > len(files) or opt < 0:
+    opt = int(input("Enter the index of file you want to convert: "))
+logfile = files[opt]
+
+#logfile = "raceLog82.log"
 
 outLog = []
 outHeaders = []
@@ -25,4 +40,8 @@ with open(logfile, 'r') as file:
 
 df = pd.DataFrame(outLog, columns=outHeaders)
 
-df.to_csv('output.csv', index=False)
+newName = logfile.split('.')
+del(newName[-1])
+newName = '.'.join(newName)
+
+df.to_csv(f'{newName}.csv', index=False)
