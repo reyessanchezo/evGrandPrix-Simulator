@@ -53,7 +53,7 @@ void loop() {
   }
   if (Serial.available() > 0) {
     String temp = Serial.readStringUntil('\r');
-    throttleVal = constrain((temp.toDouble()*255/3.3), 0, 255);
+    throttleVal = constrain(temp.toDouble(), 0, 255);
     analogWrite(throttlePin, throttleVal);
     SerialLastRead = millis();
   }
