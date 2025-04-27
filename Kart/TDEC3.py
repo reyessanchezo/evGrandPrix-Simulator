@@ -33,7 +33,7 @@ MOTORTORQUE = 5.5  ##Nm
 MAX_MOTOR_RPM = 5500 #rpm
 
 #race parameters
-NUM_LAPS = 2
+NUM_LAPS = 1
 POLLING_RATE = 0.03
 
 #torque sensor variables
@@ -309,7 +309,7 @@ class KartRPM:
 
 if __name__ == '__main__':
     #translates csv file into our custom classes
-    raceInfo = csv_to_raceinfo("tdec_track.csv")
+    raceInfo = csv_to_raceinfo("PurdueevGrandPrixTrackCSV.csv")
     
     handHoldingFlag = False
     
@@ -434,8 +434,9 @@ if __name__ == '__main__':
                         # stop the throttle
                         straight_speed = 0
                         
-                        if (readRPM() < (MAX_MOTOR_RPM * 0.05)):
-                            straight_speed = MAX_MOTOR_RPM * 0.05
+                        if (readRPM() < (MAX_MOTOR_RPM * 0.1)):
+                            dynoMode(0, dynoQueue)
+                            straight_speed = MAX_MOTOR_RPM * 0.1
                             handHoldingFlag = True
                         else:
                             handHoldingFlag = False
@@ -453,7 +454,7 @@ if __name__ == '__main__':
 
                         #logging stuff
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        appendToLog(f'{timestamp}, {time.time()}, Straight(Full Throttle), {mph}, {kph}, {TORQS}, {handHoldingFlag}, {readRPM() * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {curSegDistance}, {readTach()}, {brakePossibleBool}, {pid.setpoint}, {readRPM()}, --')
+                        appendToLog(f'{timestamp}, {time.time()}, Straight(Full Throttle), {mph}, {kph}, {TORQS}, {handHoldingFlag}, {readRPM() * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {curSegDistance}, {readTach()}, {brakePossibleBool}, --, {readRPM()}, --')
                         #tqdm.write(f'{timestamp}, {time.time()}, Straight(Full Throttle), {mph}, {kph}, {TORQS}, {outVoltage}, {readRPM() * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {curSegDistance}, {tach}, {brakePossibleBool}, {pid.setpoint}, {rpm}, --')
                     
                     #if we could not brake down to where we need to be then we brake (it will catch this on the first hit)
@@ -464,7 +465,7 @@ if __name__ == '__main__':
 
                         #logging stuff
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        appendToLog(f'{timestamp}, {time.time()}, Straight(Full Brake), {mph}, {kph}, {TORQS}, {handHoldingFlag}, {readRPM() * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {curSegDistance}, {readTach()}, {brakePossibleBool}, {pid.setpoint}, {readRPM()}, --')
+                        appendToLog(f'{timestamp}, {time.time()}, Straight(Full Brake), {mph}, {kph}, {TORQS}, {handHoldingFlag}, {readRPM() * TORQS}, {lapTime}, {curLap}, {NUM_LAPS}, {segtime}, {trackID}, {curSegDistance}, {readTach()}, {brakePossibleBool}, --, {readRPM()}, --')
 
                     #used to send voltage to arduino
                     sendRPM(straight_speed, sendQueue)
