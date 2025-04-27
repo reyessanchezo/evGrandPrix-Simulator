@@ -73,7 +73,7 @@ def PIDRPMInit(reach_rpm : int, ):
 
     #print(f'Second GOAL VOLTAGE: {RPMtoVoltage(2500)}')
 
-    pid = PID(5, 0.01, 0.1, setpoint=goalRPM)
+    pid = PID(0.004, 0.004, 0.0001, setpoint=goalRPM)
     pid.output_limits = (0, MAX_MOTOR_RPM)
 
     startTime = time.time()
